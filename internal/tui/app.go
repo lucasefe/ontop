@@ -361,8 +361,14 @@ func (m Model) handleFormKeys(msg tea.KeyMsg, keys KeyMap) (tea.Model, tea.Cmd) 
 		return m, nil
 	}
 
-	// Save
-	if key.Matches(msg, keys.Select) {
+	// Save with Ctrl+S (works from any field)
+	if key.Matches(msg, keys.Save) {
+		return m.saveForm()
+	}
+
+	// Save with Enter - but NOT if we're in the textarea (focus index 1)
+	// In textarea, Enter should add newline, not save
+	if key.Matches(msg, keys.Select) && m.formFocusIndex != 1 {
 		return m.saveForm()
 	}
 

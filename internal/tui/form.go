@@ -80,10 +80,11 @@ func (m *Model) initCreateForm(parentID *string) {
 
 	// Description (multiline textarea)
 	m.formTextarea = textarea.New()
-	m.formTextarea.Placeholder = "Full description (optional, Ctrl+Enter for newline)"
+	m.formTextarea.Placeholder = "Full description (optional, press Enter for new lines)"
 	m.formTextarea.SetWidth(inputWidth)
 	m.formTextarea.SetHeight(4)
 	m.formTextarea.CharLimit = 2000
+	m.formTextarea.ShowLineNumbers = false
 
 	m.formFocusIndex = 0
 	m.formTask = nil
@@ -137,11 +138,12 @@ func (m *Model) initEditForm(task *models.Task) {
 
 	// Description (multiline textarea)
 	m.formTextarea = textarea.New()
-	m.formTextarea.Placeholder = "Full description (optional, Ctrl+Enter for newline)"
+	m.formTextarea.Placeholder = "Full description (optional, press Enter for new lines)"
 	m.formTextarea.SetValue(task.Description)
 	m.formTextarea.SetWidth(inputWidth)
 	m.formTextarea.SetHeight(4)
 	m.formTextarea.CharLimit = 2000
+	m.formTextarea.ShowLineNumbers = false
 
 	m.formFocusIndex = 0
 	m.formTask = task
@@ -177,8 +179,9 @@ func (m Model) renderForm() string {
 	formContent.WriteString(m.formInputs[0].View() + "\n\n")
 
 	// Description field (textarea)
-	formContent.WriteString(formLabelStyle.Render("Description (Ctrl+Enter for newline):") + "\n")
-	formContent.WriteString(m.formTextarea.View() + "\n\n")
+	formContent.WriteString(formLabelStyle.Render("Description (press Enter for new lines):") + "\n")
+	formContent.WriteString(m.formTextarea.View() + "\n")
+	formContent.WriteString(formHelpStyle.Render("  (Ctrl+S to save form from any field)") + "\n\n")
 
 	// Priority field
 	formContent.WriteString(formLabelStyle.Render("Priority (1-5, 1=highest):") + "\n")
