@@ -59,15 +59,20 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	keys := m.keys
 
-	// Toggle help
+	// Quit (should always work)
+	if key.Matches(msg, keys.Quit) {
+		return m, tea.Quit
+	}
+
+	// Handle form modes first to allow "?" to be typed in text fields
+	if m.viewMode == ViewModeCreate || m.viewMode == ViewModeEdit {
+		return m.handleFormKeys(msg, keys)
+	}
+
+	// Toggle help (only for non-form modes)
 	if key.Matches(msg, keys.Help) {
 		m.help.ShowAll = !m.help.ShowAll
 		return m, nil
-	}
-
-	// Quit
-	if key.Matches(msg, keys.Quit) {
-		return m, tea.Quit
 	}
 
 	// Mode-specific handling
@@ -80,8 +85,6 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.handleMoveKeys(msg, keys)
 	case ViewModeDeleteConfirm:
 		return m.handleDeleteConfirmKeys(msg, keys)
-	case ViewModeCreate, ViewModeEdit:
-		return m.handleFormKeys(msg, keys)
 	}
 
 	return m, nil
