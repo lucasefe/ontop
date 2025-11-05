@@ -49,11 +49,11 @@ type Model struct {
 	moveSelection  int          // Which column to move to
 	deleteTask     *models.Task // Task pending deletion
 	// Form fields
-	formInputs      []textinput.Model
-	formTextarea    textarea.Model  // For multiline description
-	formFocusIndex  int
-	formTask        *models.Task // Task being created/edited
-	formErr         error        // Form validation error (doesn't quit app)
+	formInputs     []textinput.Model
+	formTextarea   textarea.Model // For multiline description
+	formFocusIndex int
+	formTask       *models.Task // Task being created/edited
+	formErr        error        // Form validation error (doesn't quit app)
 	// UI components
 	keys   KeyMap
 	help   help.Model
