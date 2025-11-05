@@ -19,10 +19,10 @@ func (m Model) Init() tea.Cmd {
 	return m.loadTasks
 }
 
-// loadTasks loads all active tasks from the database
+// loadTasks loads tasks from the database based on showArchived flag
 func (m Model) loadTasks() tea.Msg {
 	filters := map[string]interface{}{
-		"archived": false,
+		"archived": m.showArchived,
 	}
 	tasks, err := storage.ListTasks(m.db, filters)
 	if err != nil {
@@ -71,6 +71,10 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.handleDetailKeys(msg, keys)
 	case ViewModeMove:
 		return m.handleMoveKeys(msg, keys)
+	case ViewModeDeleteConfirm:
+		return m.handleDeleteConfirmKeys(msg, keys)
+	case ViewModeCreate, ViewModeEdit:
+		return m.handleFormKeys(msg, keys)
 	}
 
 	return m, nil
@@ -151,6 +155,53 @@ func (m Model) handleKanbanKeys(msg tea.KeyMsg, keys KeyMap) (tea.Model, tea.Cmd
 		return m, nil
 	}
 
+	// New task
+	if key.Matches(msg, keys.New) {
+		m.viewMode = ViewModeCreate
+		m.initCreateForm()
+		return m, nil
+	}
+
+	// Toggle sort
+	if key.Matches(msg, keys.Sort) {
+		m.ToggleSortMode()
+		return m, nil
+	}
+
+	// Toggle archived view
+	if key.Matches(msg, keys.ToggleArchive) {
+		m.showArchived = !m.showArchived
+		m.selectedTask = 0
+		return m, m.loadTasks
+	}
+
+	// Archive/Unarchive task (toggle based on current view)
+	if key.Matches(msg, keys.Archive) {
+		task := m.GetSelectedTask()
+		if task != nil {
+			// Toggle: if viewing archived, unarchive; if viewing active, archive
+			task.Archived = !m.showArchived
+			task.UpdatedAt = time.Now()
+			if err := storage.UpdateTask(m.db, task); err != nil {
+				m.err = err
+				return m, tea.Quit
+			}
+			return m, m.loadTasks
+		}
+		return m, nil
+	}
+
+	// Delete task (show confirmation)
+	if key.Matches(msg, keys.Delete) {
+		task := m.GetSelectedTask()
+		if task != nil {
+			m.viewMode = ViewModeDeleteConfirm
+			m.deleteTask = task
+			m.moveSelection = 0 // Default to "No"
+		}
+		return m, nil
+	}
+
 	return m, nil
 }
 
@@ -161,6 +212,43 @@ func (m Model) handleDetailKeys(msg tea.KeyMsg, keys KeyMap) (tea.Model, tea.Cmd
 		m.viewMode = ViewModeKanban
 		m.detailTask = nil
 		m.detailSubtasks = nil
+		return m, nil
+	}
+
+	// Edit task
+	if key.Matches(msg, keys.Edit) {
+		if m.detailTask != nil {
+			m.viewMode = ViewModeEdit
+			m.initEditForm(m.detailTask)
+		}
+		return m, nil
+	}
+
+	// Archive/Unarchive task (toggle based on current view)
+	if key.Matches(msg, keys.Archive) {
+		if m.detailTask != nil {
+			// Toggle: if viewing archived, unarchive; if viewing active, archive
+			m.detailTask.Archived = !m.showArchived
+			m.detailTask.UpdatedAt = time.Now()
+			if err := storage.UpdateTask(m.db, m.detailTask); err != nil {
+				m.err = err
+				return m, tea.Quit
+			}
+			m.viewMode = ViewModeKanban
+			m.detailTask = nil
+			m.detailSubtasks = nil
+			return m, m.loadTasks
+		}
+		return m, nil
+	}
+
+	// Delete task (show confirmation)
+	if key.Matches(msg, keys.Delete) {
+		if m.detailTask != nil {
+			m.viewMode = ViewModeDeleteConfirm
+			m.deleteTask = m.detailTask
+			m.moveSelection = 0 // Default to "No"
+		}
 		return m, nil
 	}
 
@@ -197,6 +285,89 @@ func (m Model) handleMoveKeys(msg tea.KeyMsg, keys KeyMap) (tea.Model, tea.Cmd) 
 	}
 
 	return m, nil
+}
+
+// handleDeleteConfirmKeys handles key presses in delete confirmation view
+func (m Model) handleDeleteConfirmKeys(msg tea.KeyMsg, keys KeyMap) (tea.Model, tea.Cmd) {
+	// Cancel
+	if key.Matches(msg, keys.Back) {
+		m.viewMode = ViewModeKanban
+		m.deleteTask = nil
+		return m, nil
+	}
+
+	// Navigate between No/Yes
+	if key.Matches(msg, keys.Left) {
+		if m.moveSelection > 0 {
+			m.moveSelection--
+		}
+		return m, nil
+	}
+
+	if key.Matches(msg, keys.Right) {
+		if m.moveSelection < 1 {
+			m.moveSelection++
+		}
+		return m, nil
+	}
+
+	// Confirm
+	if key.Matches(msg, keys.Select) {
+		if m.moveSelection == 1 { // Yes, delete
+			if m.deleteTask != nil {
+				if err := storage.DeleteTask(m.db, m.deleteTask.ID); err != nil {
+					m.err = err
+					return m, tea.Quit
+				}
+			}
+		}
+		// Either way, go back to kanban
+		m.viewMode = ViewModeKanban
+		m.deleteTask = nil
+		m.detailTask = nil
+		m.detailSubtasks = nil
+		return m, m.loadTasks
+	}
+
+	return m, nil
+}
+
+// handleFormKeys handles key presses in create/edit form view
+func (m Model) handleFormKeys(msg tea.KeyMsg, keys KeyMap) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+
+	// Cancel
+	if key.Matches(msg, keys.Back) {
+		m.viewMode = ViewModeKanban
+		m.formInputs = nil
+		m.formTask = nil
+		return m, nil
+	}
+
+	// Save
+	if key.Matches(msg, keys.Select) {
+		return m.saveForm()
+	}
+
+	// Tab to next field
+	if key.Matches(msg, keys.Tab) {
+		m.formFocusIndex = (m.formFocusIndex + 1) % len(m.formInputs)
+		for i := range m.formInputs {
+			if i == m.formFocusIndex {
+				m.formInputs[i].Focus()
+			} else {
+				m.formInputs[i].Blur()
+			}
+		}
+		return m, nil
+	}
+
+	// Update the focused input
+	if m.formFocusIndex >= 0 && m.formFocusIndex < len(m.formInputs) {
+		m.formInputs[m.formFocusIndex], cmd = m.formInputs[m.formFocusIndex].Update(msg)
+	}
+
+	return m, cmd
 }
 
 // confirmMove performs the actual task move operation
@@ -258,6 +429,10 @@ func (m Model) View() string {
 		return m.renderDetail()
 	case ViewModeMove:
 		return m.renderMovePrompt()
+	case ViewModeDeleteConfirm:
+		return m.renderDeleteConfirm()
+	case ViewModeCreate, ViewModeEdit:
+		return m.renderForm()
 	}
 
 	return ""

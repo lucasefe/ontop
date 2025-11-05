@@ -28,7 +28,8 @@
       "Bash(./ontop show:*)",
       "Bash(find:*)",
       "Bash(./ontop add:*)",
-      "Bash(./ontop:*)"
+      "Bash(./ontop:*)",
+      "Bash(tree:*)"
     ],
     "deny": [],
     "ask": []

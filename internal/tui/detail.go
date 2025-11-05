@@ -10,19 +10,19 @@ import (
 var (
 	detailTitleStyle = lipgloss.NewStyle().
 				Bold(true).
-				Foreground(lipgloss.Color("86")).
+				Foreground(gruvboxGreen).
 				MarginBottom(1)
 
 	detailLabelStyle = lipgloss.NewStyle().
 				Bold(true).
-				Foreground(lipgloss.Color("240"))
+				Foreground(gruvboxGray)
 
 	detailValueStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("15"))
+				Foreground(gruvboxFg)
 
 	detailSectionStyle = lipgloss.NewStyle().
 				Border(lipgloss.RoundedBorder()).
-				BorderForeground(lipgloss.Color("240")).
+				BorderForeground(gruvboxGray).
 				Padding(1, 2).
 				MarginBottom(1)
 )
@@ -39,7 +39,7 @@ func (m Model) renderDetail() string {
 	// Title
 	title := lipgloss.NewStyle().
 		Bold(true).
-		Foreground(lipgloss.Color("86")).
+		Foreground(gruvboxGreen).
 		Render("Task Details")
 	b.WriteString(title + "\n\n")
 
@@ -59,7 +59,7 @@ func (m Model) renderDetail() string {
 	// Priority
 	priorityColor, ok := priorityColors[task.Priority]
 	if !ok {
-		priorityColor = lipgloss.Color("240")
+		priorityColor = gruvboxGray
 	}
 	priorityStyle := lipgloss.NewStyle().
 		Foreground(priorityColor).
@@ -86,7 +86,7 @@ func (m Model) renderDetail() string {
 	details.WriteString(detailLabelStyle.Render("Tags: "))
 	if len(task.Tags) > 0 {
 		tagStyle := lipgloss.NewStyle().
-			Foreground(lipgloss.Color("86")).
+			Foreground(gruvboxAqua).
 			Bold(true)
 		for i, tag := range task.Tags {
 			if i > 0 {
@@ -131,7 +131,7 @@ func (m Model) renderDetail() string {
 		var subtasks strings.Builder
 		subtasksTitle := lipgloss.NewStyle().
 			Bold(true).
-			Foreground(lipgloss.Color("226")).
+			Foreground(gruvboxYellow).
 			Render(fmt.Sprintf("Subtasks (%d)", len(m.detailSubtasks)))
 		subtasks.WriteString(subtasksTitle)
 		subtasks.WriteString("\n\n")
@@ -140,7 +140,7 @@ func (m Model) renderDetail() string {
 			// Priority and description
 			priorityColor, ok := priorityColors[st.Priority]
 			if !ok {
-				priorityColor = lipgloss.Color("240")
+				priorityColor = gruvboxGray
 			}
 			priorityStyle := lipgloss.NewStyle().
 				Foreground(priorityColor).
@@ -157,7 +157,7 @@ func (m Model) renderDetail() string {
 			}
 
 			// Column indicator
-			columnStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+			columnStyle := lipgloss.NewStyle().Foreground(gruvboxGray)
 			subtasks.WriteString(" " + columnStyle.Render("["+formatColumnShort(st.Column)+"]"))
 
 			subtasks.WriteString("\n")
@@ -167,8 +167,12 @@ func (m Model) renderDetail() string {
 		b.WriteString("\n")
 	}
 
-	// Help text
-	help := "esc: back to kanban • q: quit"
+	// Help text with dynamic archive/unarchive
+	archiveAction := "archive"
+	if m.showArchived {
+		archiveAction = "unarchive"
+	}
+	help := fmt.Sprintf("e: edit • a: %s • d: delete • esc: back to kanban • q: quit", archiveAction)
 	b.WriteString(helpStyle.Render(help))
 
 	return b.String()
@@ -179,8 +183,8 @@ func renderProgressBar(progress int, width int) string {
 	filled := int(float64(progress) / 100.0 * float64(width))
 	empty := width - filled
 
-	filledStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("86"))
-	emptyStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	filledStyle := lipgloss.NewStyle().Foreground(gruvboxGreen)
+	emptyStyle := lipgloss.NewStyle().Foreground(gruvboxGray)
 
 	bar := filledStyle.Render(strings.Repeat("█", filled)) +
 		emptyStyle.Render(strings.Repeat("░", empty))

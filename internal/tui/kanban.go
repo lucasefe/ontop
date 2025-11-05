@@ -9,58 +9,70 @@ import (
 )
 
 var (
-	// Column styles
+	// Gruvbox colors
+	gruvboxBg0     = lipgloss.Color("#282828")
+	gruvboxBg1     = lipgloss.Color("#3c3836")
+	gruvboxBg2     = lipgloss.Color("#504945")
+	gruvboxFg      = lipgloss.Color("#ebdbb2")
+	gruvboxGray    = lipgloss.Color("#928374")
+	gruvboxRed     = lipgloss.Color("#fb4934")
+	gruvboxOrange  = lipgloss.Color("#fe8019")
+	gruvboxYellow  = lipgloss.Color("#fabd2f")
+	gruvboxGreen   = lipgloss.Color("#b8bb26")
+	gruvboxAqua    = lipgloss.Color("#8ec07c")
+	gruvboxBlue    = lipgloss.Color("#83a598")
+	gruvboxPurple  = lipgloss.Color("#d3869b")
+
+	// Column styles (width will be set dynamically)
 	columnStyle = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("240")).
-			Padding(0, 1).
-			Width(30)
+			BorderForeground(gruvboxGray).
+			Padding(0, 1)
 
 	activeColumnStyle = lipgloss.NewStyle().
 				Border(lipgloss.RoundedBorder()).
-				BorderForeground(lipgloss.Color("86")).
-				Padding(0, 1).
-				Width(30)
+				BorderForeground(gruvboxGreen).
+				Padding(0, 1)
 
 	// Column header styles
 	inboxHeaderStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("86")).
+				Foreground(gruvboxAqua).
 				Bold(true)
 
 	inProgressHeaderStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("226")).
+				Foreground(gruvboxYellow).
 				Bold(true)
 
 	doneHeaderStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("120")).
+			Foreground(gruvboxGreen).
 			Bold(true)
 
 	// Task card styles
 	taskStyle = lipgloss.NewStyle().
 			Padding(0, 1).
-			MarginBottom(1)
+			MarginBottom(0)
 
 	selectedTaskStyle = lipgloss.NewStyle().
-				Background(lipgloss.Color("240")).
-				Foreground(lipgloss.Color("15")).
+				Background(gruvboxBg2).
+				Foreground(gruvboxFg).
 				Padding(0, 1).
-				MarginBottom(1)
+				MarginBottom(0)
 
 	priorityColors = map[int]lipgloss.Color{
-		1: lipgloss.Color("196"), // Red
-		2: lipgloss.Color("208"), // Orange
-		3: lipgloss.Color("226"), // Yellow
-		4: lipgloss.Color("86"),  // Green
-		5: lipgloss.Color("240"), // Gray
+		1: gruvboxRed,
+		2: gruvboxOrange,
+		3: gruvboxYellow,
+		4: gruvboxGreen,
+		5: gruvboxGray,
 	}
 
 	// Status bar style
 	statusBarStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("240")).
+			Foreground(gruvboxGray).
 			MarginTop(1)
 
 	helpStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("240"))
+			Foreground(gruvboxGray)
 )
 
 // renderKanban renders the kanban board view
@@ -70,7 +82,7 @@ func (m Model) renderKanban() string {
 	// Title
 	title := lipgloss.NewStyle().
 		Bold(true).
-		Foreground(lipgloss.Color("86")).
+		Foreground(gruvboxGreen).
 		Render("OnTop - Task Manager")
 	b.WriteString(title + "\n\n")
 
@@ -94,13 +106,19 @@ func (m Model) renderKanban() string {
 	b.WriteString(columns)
 	b.WriteString("\n\n")
 
-	// Status bar
-	statusMsg := fmt.Sprintf("Total tasks: %d", len(m.tasks))
+	// Status bar with sort info and archive indicator
+	viewMode := "Active"
+	archiveAction := "archive"
+	if m.showArchived {
+		viewMode = "Archived"
+		archiveAction = "unarchive"
+	}
+	statusMsg := fmt.Sprintf("Total tasks: %d  •  Sort: %s  •  View: %s", len(m.tasks), m.GetSortModeName(), viewMode)
 	b.WriteString(statusBarStyle.Render(statusMsg))
 	b.WriteString("\n")
 
 	// Help text
-	help := "j/k: up/down • h/l: prev/next column • enter: details • m: move • r: refresh • q: quit"
+	help := fmt.Sprintf("j/k: up/down • h/l: prev/next • s: sort • z: toggle archive • enter: details • n: new • m: move • a: %s • d: delete • r: refresh • q: quit", archiveAction)
 	b.WriteString(helpStyle.Render(help))
 
 	return b.String()
@@ -109,6 +127,16 @@ func (m Model) renderKanban() string {
 // renderColumn renders a single column with its tasks
 func (m Model) renderColumn(title string, tasks []*models.Task, columnIndex int) string {
 	var b strings.Builder
+
+	// Calculate column width based on terminal width
+	// Leave space for borders and padding: 3 columns + margins
+	columnWidth := (m.width - 10) / 3
+	if columnWidth < 25 {
+		columnWidth = 25 // Minimum width
+	}
+	if columnWidth > 50 {
+		columnWidth = 50 // Maximum width
+	}
 
 	// Column header
 	var headerStyle lipgloss.Style
@@ -125,8 +153,13 @@ func (m Model) renderColumn(title string, tasks []*models.Task, columnIndex int)
 	b.WriteString(headerStyle.Render(header))
 	b.WriteString("\n\n")
 
+	// Calculate max tasks based on terminal height
+	maxTasks := (m.height - 10) / 3 // Roughly 3 lines per task
+	if maxTasks < 5 {
+		maxTasks = 5
+	}
+
 	// Render tasks
-	maxTasks := 10 // Limit visible tasks per column
 	for i, task := range tasks {
 		if i >= maxTasks {
 			remaining := len(tasks) - maxTasks
@@ -135,7 +168,7 @@ func (m Model) renderColumn(title string, tasks []*models.Task, columnIndex int)
 		}
 
 		isSelected := columnIndex == m.currentColumn && i == m.selectedTask
-		cardContent := m.renderTaskCard(task)
+		cardContent := m.renderTaskCard(task, columnWidth-4) // Subtract padding
 
 		if isSelected {
 			b.WriteString(selectedTaskStyle.Render(cardContent))
@@ -150,54 +183,49 @@ func (m Model) renderColumn(title string, tasks []*models.Task, columnIndex int)
 		b.WriteString(taskStyle.Render("(no tasks)"))
 	}
 
-	// Apply column style
+	// Apply column style with dynamic width
 	content := b.String()
 	if columnIndex == m.currentColumn {
-		return activeColumnStyle.Render(content)
+		return activeColumnStyle.Width(columnWidth).Render(content)
 	}
-	return columnStyle.Render(content)
+	return columnStyle.Width(columnWidth).Render(content)
 }
 
-// renderTaskCard renders a single task card
-func (m Model) renderTaskCard(task *models.Task) string {
-	var b strings.Builder
-
+// renderTaskCard renders a single task card as a single line
+func (m Model) renderTaskCard(task *models.Task, maxWidth int) string {
 	// Priority indicator
 	priorityColor, ok := priorityColors[task.Priority]
 	if !ok {
-		priorityColor = lipgloss.Color("240")
+		priorityColor = gruvboxGray
 	}
 	priorityStyle := lipgloss.NewStyle().
 		Foreground(priorityColor).
 		Bold(true)
 
-	b.WriteString(priorityStyle.Render(fmt.Sprintf("P%d", task.Priority)))
-	b.WriteString(" ")
+	priorityStr := priorityStyle.Render(fmt.Sprintf("P%d", task.Priority))
 
-	// Description (truncated)
+	// Created at (short format)
+	createdStr := task.CreatedAt.Format("01/02")
+	timeStyle := lipgloss.NewStyle().Foreground(gruvboxGray)
+
+	// Calculate space for description
+	// Format: "P1 description... 01/02"
+	reservedSpace := 3 + 1 + 5 + 1 // "P1 " + " " + "01/02"
+	descMaxLen := maxWidth - reservedSpace
+	if descMaxLen < 10 {
+		descMaxLen = 10
+	}
+
+	// Description (truncated if needed)
 	desc := task.Description
-	maxLen := 24
-	if len(desc) > maxLen {
-		desc = desc[:maxLen-3] + "..."
-	}
-	b.WriteString(desc)
-	b.WriteString("\n")
-
-	// Tags
-	if len(task.Tags) > 0 {
-		tagsStr := strings.Join(task.Tags, ", ")
-		if len(tagsStr) > maxLen {
-			tagsStr = tagsStr[:maxLen-3] + "..."
-		}
-		tagStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
-		b.WriteString(tagStyle.Render("[" + tagsStr + "]"))
+	if len(desc) > descMaxLen {
+		desc = desc[:descMaxLen-3] + "..."
 	}
 
-	// Progress bar for non-zero progress
-	if task.Progress > 0 {
-		progressStr := fmt.Sprintf(" %d%%", task.Progress)
-		b.WriteString(progressStr)
-	}
-
-	return b.String()
+	// Build single line: "P1 description... 01/02"
+	return fmt.Sprintf("%s %s %s",
+		priorityStr,
+		desc,
+		timeStyle.Render(createdStr),
+	)
 }

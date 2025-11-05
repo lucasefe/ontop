@@ -11,7 +11,7 @@ import (
 var (
 	movePromptStyle = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("86")).
+			BorderForeground(gruvboxGreen).
 			Padding(1, 2).
 			MarginTop(2).
 			MarginBottom(2)
@@ -21,8 +21,8 @@ var (
 			MarginRight(2)
 
 	moveSelectedStyle = lipgloss.NewStyle().
-				Background(lipgloss.Color("86")).
-				Foreground(lipgloss.Color("0")).
+				Background(gruvboxGreen).
+				Foreground(gruvboxBg0).
 				Bold(true).
 				Padding(0, 2).
 				MarginRight(2)
@@ -39,18 +39,18 @@ func (m Model) renderMovePrompt() string {
 	// Title
 	title := lipgloss.NewStyle().
 		Bold(true).
-		Foreground(lipgloss.Color("86")).
+		Foreground(gruvboxGreen).
 		Render("Move Task")
 	b.WriteString(title + "\n\n")
 
 	// Task info
 	taskInfo := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("240")).
+		Foreground(gruvboxGray).
 		Render(fmt.Sprintf("Task: %s", m.moveTask.Description))
 	b.WriteString(taskInfo + "\n")
 
 	currentColumn := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("240")).
+		Foreground(gruvboxGray).
 		Render(fmt.Sprintf("Current: %s", formatColumnName(m.moveTask.Column)))
 	b.WriteString(currentColumn + "\n\n")
 
@@ -74,7 +74,7 @@ func (m Model) renderMovePrompt() string {
 	// Show if moving to same column
 	if columnValues[m.moveSelection] == m.moveTask.Column {
 		sameColumnMsg := lipgloss.NewStyle().
-			Foreground(lipgloss.Color("226")).
+			Foreground(gruvboxYellow).
 			Render("(already in this column)")
 		prompt.WriteString(sameColumnMsg + "\n\n")
 	}

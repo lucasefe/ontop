@@ -2,7 +2,10 @@ package tui
 
 import (
 	"database/sql"
+	"sort"
+	"strings"
 
+	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/lucasefe/ontop/internal/models"
 )
 
@@ -13,6 +16,19 @@ const (
 	ViewModeKanban ViewMode = iota
 	ViewModeDetail
 	ViewModeMove
+	ViewModeCreate
+	ViewModeEdit
+	ViewModeDeleteConfirm
+)
+
+// SortMode represents how tasks are sorted
+type SortMode int
+
+const (
+	SortByPriority SortMode = iota
+	SortByDescription
+	SortByCreated
+	SortByUpdated
 )
 
 // Model represents the Bubbletea application state
@@ -22,10 +38,17 @@ type Model struct {
 	currentColumn   int // 0=inbox, 1=in_progress, 2=done
 	selectedTask    int // Index within current column
 	viewMode        ViewMode
+	sortMode        SortMode // How tasks are sorted in columns
+	showArchived    bool     // Show archived tasks instead of active
 	detailTask      *models.Task
 	detailSubtasks  []*models.Task
 	moveTask        *models.Task
 	moveSelection   int // Which column to move to
+	deleteTask      *models.Task // Task pending deletion
+	// Form fields
+	formInputs      []textinput.Model
+	formFocusIndex  int
+	formTask        *models.Task // Task being created/edited
 	width           int
 	height          int
 	err             error
@@ -38,12 +61,13 @@ func NewModel(db *sql.DB) Model {
 		currentColumn: 0,
 		selectedTask:  0,
 		viewMode:      ViewModeKanban,
+		sortMode:      SortByPriority,
 		width:         80,
 		height:        24,
 	}
 }
 
-// GetTasksByColumn returns tasks filtered by column
+// GetTasksByColumn returns tasks filtered by column and sorted by current sort mode
 func (m *Model) GetTasksByColumn(column string) []*models.Task {
 	var filtered []*models.Task
 	for _, task := range m.tasks {
@@ -51,6 +75,23 @@ func (m *Model) GetTasksByColumn(column string) []*models.Task {
 			filtered = append(filtered, task)
 		}
 	}
+
+	// Sort based on current sort mode
+	sort.Slice(filtered, func(i, j int) bool {
+		switch m.sortMode {
+		case SortByPriority:
+			return filtered[i].Priority < filtered[j].Priority // Lower number = higher priority
+		case SortByDescription:
+			return strings.ToLower(filtered[i].Description) < strings.ToLower(filtered[j].Description)
+		case SortByCreated:
+			return filtered[i].CreatedAt.After(filtered[j].CreatedAt) // Newest first
+		case SortByUpdated:
+			return filtered[i].UpdatedAt.After(filtered[j].UpdatedAt) // Most recently updated first
+		default:
+			return filtered[i].Priority < filtered[j].Priority
+		}
+	})
+
 	return filtered
 }
 
@@ -70,4 +111,27 @@ func (m *Model) GetSelectedTask() *models.Task {
 		return columnTasks[m.selectedTask]
 	}
 	return nil
+}
+
+// GetSortModeName returns the display name for the current sort mode
+func (m *Model) GetSortModeName() string {
+	switch m.sortMode {
+	case SortByPriority:
+		return "Priority"
+	case SortByDescription:
+		return "Description"
+	case SortByCreated:
+		return "Created"
+	case SortByUpdated:
+		return "Updated"
+	default:
+		return "Priority"
+	}
+}
+
+// ToggleSortMode cycles to the next sort mode
+func (m *Model) ToggleSortMode() {
+	m.sortMode = (m.sortMode + 1) % 4
+	// Reset selection to top when sort changes
+	m.selectedTask = 0
 }
