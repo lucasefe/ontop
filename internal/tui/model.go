@@ -2,13 +2,13 @@ package tui
 
 import (
 	"database/sql"
-	"sort"
-	"strings"
 
 	"github.com/charmbracelet/bubbles/help"
+	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/lucasefe/ontop/internal/models"
+	"github.com/lucasefe/ontop/internal/service"
 )
 
 // ViewMode represents the current view in the TUI
@@ -23,14 +23,15 @@ const (
 	ViewModeDeleteConfirm
 )
 
-// SortMode represents how tasks are sorted
-type SortMode int
+// SortMode is an alias to service.SortMode for backward compatibility
+type SortMode = service.SortMode
 
+// Sort mode constants
 const (
-	SortByPriority SortMode = iota
-	SortByDescription
-	SortByCreated
-	SortByUpdated
+	SortByPriority    = service.SortByPriority
+	SortByDescription = service.SortByDescription
+	SortByCreated     = service.SortByCreated
+	SortByUpdated     = service.SortByUpdated
 )
 
 // Model represents the Bubbletea application state
@@ -48,10 +49,11 @@ type Model struct {
 	moveSelection  int          // Which column to move to
 	deleteTask     *models.Task // Task pending deletion
 	// Form fields
-	formInputs     []textinput.Model
-	formFocusIndex int
-	formTask       *models.Task // Task being created/edited
-	formErr        error        // Form validation error (doesn't quit app)
+	formInputs      []textinput.Model
+	formTextarea    textarea.Model  // For multiline description
+	formFocusIndex  int
+	formTask        *models.Task // Task being created/edited
+	formErr         error        // Form validation error (doesn't quit app)
 	// UI components
 	keys   KeyMap
 	help   help.Model
@@ -86,7 +88,7 @@ func NewModel(db *sql.DB) Model {
 	}
 }
 
-// GetTasksByColumn returns tasks filtered by column and sorted by current sort mode
+// GetTasksByColumn returns tasks filtered by column in hierarchical display order
 func (m *Model) GetTasksByColumn(column string) []*models.Task {
 	var filtered []*models.Task
 	for _, task := range m.tasks {
@@ -95,23 +97,16 @@ func (m *Model) GetTasksByColumn(column string) []*models.Task {
 		}
 	}
 
-	// Sort based on current sort mode
-	sort.Slice(filtered, func(i, j int) bool {
-		switch m.sortMode {
-		case SortByPriority:
-			return filtered[i].Priority < filtered[j].Priority // Lower number = higher priority
-		case SortByDescription:
-			return strings.ToLower(filtered[i].Description) < strings.ToLower(filtered[j].Description)
-		case SortByCreated:
-			return filtered[i].CreatedAt.After(filtered[j].CreatedAt) // Newest first
-		case SortByUpdated:
-			return filtered[i].UpdatedAt.After(filtered[j].UpdatedAt) // Most recently updated first
-		default:
-			return filtered[i].Priority < filtered[j].Priority
-		}
-	})
+	// Build hierarchical display order
+	hierarchical := service.BuildFlatHierarchy(filtered, m.sortMode)
 
-	return filtered
+	// Extract Task pointers (unwrap HierarchicalTask)
+	result := make([]*models.Task, len(hierarchical))
+	for i, ht := range hierarchical {
+		result[i] = ht.Task
+	}
+
+	return result
 }
 
 // GetCurrentColumnName returns the name of the currently selected column

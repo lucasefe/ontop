@@ -32,7 +32,11 @@
       "Bash(tree:*)",
       "Bash(sed:*)",
       "Bash(make lint:*)",
-      "Bash(brew install:*)"
+      "Bash(brew install:*)",
+      "Bash(if [ -d \"/Users/lucasefe/Code/mine/todoer/specs/002-subtask-display-edit/checklists\" ])",
+      "Bash(then find \"/Users/lucasefe/Code/mine/todoer/specs/002-subtask-display-edit/checklists\" -name \"*.md\" -type f)",
+      "Bash(go version:*)",
+      "Bash(go test:*)"
     ],
     "deny": [],
     "ask": []

@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/lucasefe/ontop/internal/service"
 	"github.com/lucasefe/ontop/internal/storage"
 )
 
@@ -93,22 +94,40 @@ EXAMPLES:
 
 		fmt.Printf("\nTotal: %d tasks\n\n", len(tasks))
 
-		for _, task := range tasks {
-			priorityStr := fmt.Sprintf("P%d", task.Priority)
-			tagsStr := ""
-			if len(task.Tags) > 0 {
-				tagsStr = fmt.Sprintf(" [%s]", strings.Join(task.Tags, ", "))
-			}
-			progressStr := ""
-			if task.Progress > 0 {
-				progressStr = fmt.Sprintf(" (%d%%)", task.Progress)
+		// Build hierarchical display order
+		hierarchical := service.BuildFlatHierarchy(tasks, service.SortByPriority)
+
+		for _, ht := range hierarchical {
+			// Add indentation for subtasks
+			indent := strings.Repeat(" ", ht.Indentation)
+			prefix := ""
+			if ht.IsSubtask {
+				prefix = "- "
 			}
 
-			fmt.Printf("[%s] %s | %s | %s%s%s\n",
-				task.ID,
+			priorityStr := fmt.Sprintf("P%d", ht.Task.Priority)
+			tagsStr := ""
+			if len(ht.Task.Tags) > 0 {
+				tagsStr = fmt.Sprintf(" [%s]", strings.Join(ht.Task.Tags, ", "))
+			}
+			progressStr := ""
+			if ht.Task.Progress > 0 {
+				progressStr = fmt.Sprintf(" (%d%%)", ht.Task.Progress)
+			}
+
+			// Display title if present, fallback to description
+			displayText := ht.Task.Description
+			if ht.Task.Title != "" {
+				displayText = ht.Task.Title
+			}
+
+			fmt.Printf("%s%s[%s] %s | %s | %s%s%s\n",
+				indent,
+				prefix,
+				ht.Task.ID,
 				priorityStr,
-				formatColumnDisplay(task.Column),
-				task.Description,
+				formatColumnDisplay(ht.Task.Column),
+				displayText,
 				tagsStr,
 				progressStr,
 			)
