@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -21,10 +22,6 @@ var (
 			Padding(1, 2).
 			MarginTop(1)
 
-	formTitleStyle = lipgloss.NewStyle().
-			Bold(true).
-			Foreground(gruvboxGreen)
-
 	formLabelStyle = lipgloss.NewStyle().
 			Foreground(gruvboxGray).
 			Bold(true)
@@ -35,15 +32,16 @@ var (
 )
 
 // initCreateForm initializes the form for creating a new task
-func (m *Model) initCreateForm() {
+// parentID can be provided to pre-fill the parent task ID field (for creating subtasks)
+func (m *Model) initCreateForm(parentID *string) {
 	// Calculate input width based on terminal width
 	inputWidth := m.width - 20 // Leave space for borders and padding
 	if inputWidth < 40 {
 		inputWidth = 40
 	}
 
-	// Create text inputs (6 fields: title, description, priority, progress, tags, parent)
-	m.formInputs = make([]textinput.Model, 6)
+	// Create text inputs (5 fields: title, priority, progress, tags, parent)
+	m.formInputs = make([]textinput.Model, 5)
 
 	// Title (short)
 	m.formInputs[0] = textinput.New()
@@ -51,34 +49,42 @@ func (m *Model) initCreateForm() {
 	m.formInputs[0].Focus()
 	m.formInputs[0].Width = inputWidth
 
-	// Description (full text)
-	m.formInputs[1] = textinput.New()
-	m.formInputs[1].Placeholder = "Full description (optional)"
-	m.formInputs[1].Width = inputWidth
-
 	// Priority
-	m.formInputs[2] = textinput.New()
-	m.formInputs[2].Placeholder = "1-5 (default: 3)"
-	m.formInputs[2].SetValue("3")
-	m.formInputs[2].CharLimit = 1
-	m.formInputs[2].Width = 20
+	m.formInputs[1] = textinput.New()
+	m.formInputs[1].Placeholder = "1-5 (default: 3)"
+	m.formInputs[1].SetValue("3")
+	m.formInputs[1].CharLimit = 1
+	m.formInputs[1].Width = 20
 
 	// Progress
-	m.formInputs[3] = textinput.New()
-	m.formInputs[3].Placeholder = "0-100 (default: 0)"
-	m.formInputs[3].SetValue("0")
-	m.formInputs[3].CharLimit = 3
-	m.formInputs[3].Width = 20
+	m.formInputs[2] = textinput.New()
+	m.formInputs[2].Placeholder = "0-100 (default: 0)"
+	m.formInputs[2].SetValue("0")
+	m.formInputs[2].CharLimit = 3
+	m.formInputs[2].Width = 20
 
 	// Tags
-	m.formInputs[4] = textinput.New()
-	m.formInputs[4].Placeholder = "tag1,tag2,tag3"
-	m.formInputs[4].Width = inputWidth
+	m.formInputs[3] = textinput.New()
+	m.formInputs[3].Placeholder = "tag1,tag2,tag3"
+	m.formInputs[3].Width = inputWidth
 
 	// Parent task ID
-	m.formInputs[5] = textinput.New()
-	m.formInputs[5].Placeholder = "Parent task ID (optional)"
-	m.formInputs[5].Width = inputWidth
+	m.formInputs[4] = textinput.New()
+	m.formInputs[4].Placeholder = "Parent task ID (optional)"
+	m.formInputs[4].Width = inputWidth
+
+	// Pre-fill parent ID if provided
+	if parentID != nil {
+		m.formInputs[4].SetValue(*parentID)
+	}
+
+	// Description (multiline textarea)
+	m.formTextarea = textarea.New()
+	m.formTextarea.Placeholder = "Full description (optional, press Enter for new lines)"
+	m.formTextarea.SetWidth(inputWidth)
+	m.formTextarea.SetHeight(8) // Increased from 4 to 8 lines
+	m.formTextarea.CharLimit = 2000
+	m.formTextarea.ShowLineNumbers = true // Show line numbers to indicate scroll position
 
 	m.formFocusIndex = 0
 	m.formTask = nil
@@ -92,8 +98,8 @@ func (m *Model) initEditForm(task *models.Task) {
 		inputWidth = 40
 	}
 
-	// Create text inputs (6 fields: title, description, priority, progress, tags, parent)
-	m.formInputs = make([]textinput.Model, 6)
+	// Create text inputs (5 fields: title, priority, progress, tags, parent)
+	m.formInputs = make([]textinput.Model, 5)
 
 	// Title
 	m.formInputs[0] = textinput.New()
@@ -102,39 +108,42 @@ func (m *Model) initEditForm(task *models.Task) {
 	m.formInputs[0].Focus()
 	m.formInputs[0].Width = inputWidth
 
-	// Description
-	m.formInputs[1] = textinput.New()
-	m.formInputs[1].Placeholder = "Full description (optional)"
-	m.formInputs[1].SetValue(task.Description)
-	m.formInputs[1].Width = inputWidth
-
 	// Priority
-	m.formInputs[2] = textinput.New()
-	m.formInputs[2].Placeholder = "1-5 (1=highest)"
-	m.formInputs[2].SetValue(strconv.Itoa(task.Priority))
-	m.formInputs[2].CharLimit = 1
-	m.formInputs[2].Width = 20
+	m.formInputs[1] = textinput.New()
+	m.formInputs[1].Placeholder = "1-5 (1=highest)"
+	m.formInputs[1].SetValue(strconv.Itoa(task.Priority))
+	m.formInputs[1].CharLimit = 1
+	m.formInputs[1].Width = 20
 
 	// Progress
-	m.formInputs[3] = textinput.New()
-	m.formInputs[3].Placeholder = "0-100"
-	m.formInputs[3].SetValue(strconv.Itoa(task.Progress))
-	m.formInputs[3].CharLimit = 3
-	m.formInputs[3].Width = 20
+	m.formInputs[2] = textinput.New()
+	m.formInputs[2].Placeholder = "0-100"
+	m.formInputs[2].SetValue(strconv.Itoa(task.Progress))
+	m.formInputs[2].CharLimit = 3
+	m.formInputs[2].Width = 20
 
 	// Tags
-	m.formInputs[4] = textinput.New()
-	m.formInputs[4].Placeholder = "tag1,tag2,tag3"
-	m.formInputs[4].SetValue(strings.Join(task.Tags, ","))
-	m.formInputs[4].Width = inputWidth
+	m.formInputs[3] = textinput.New()
+	m.formInputs[3].Placeholder = "tag1,tag2,tag3"
+	m.formInputs[3].SetValue(strings.Join(task.Tags, ","))
+	m.formInputs[3].Width = inputWidth
 
 	// Parent task ID
-	m.formInputs[5] = textinput.New()
-	m.formInputs[5].Placeholder = "Parent task ID (clear to remove parent)"
+	m.formInputs[4] = textinput.New()
+	m.formInputs[4].Placeholder = "Parent task ID (clear to remove parent)"
 	if task.ParentID != nil {
-		m.formInputs[5].SetValue(*task.ParentID)
+		m.formInputs[4].SetValue(*task.ParentID)
 	}
-	m.formInputs[5].Width = inputWidth
+	m.formInputs[4].Width = inputWidth
+
+	// Description (multiline textarea)
+	m.formTextarea = textarea.New()
+	m.formTextarea.Placeholder = "Full description (optional, press Enter for new lines)"
+	m.formTextarea.SetValue(task.Description)
+	m.formTextarea.SetWidth(inputWidth)
+	m.formTextarea.SetHeight(8) // Increased from 4 to 8 lines
+	m.formTextarea.CharLimit = 2000
+	m.formTextarea.ShowLineNumbers = true // Show line numbers to indicate scroll position
 
 	m.formFocusIndex = 0
 	m.formTask = task
@@ -169,25 +178,26 @@ func (m Model) renderForm() string {
 	formContent.WriteString(formLabelStyle.Render("Title:") + "\n")
 	formContent.WriteString(m.formInputs[0].View() + "\n\n")
 
-	// Description field
-	formContent.WriteString(formLabelStyle.Render("Description (full text):") + "\n")
-	formContent.WriteString(m.formInputs[1].View() + "\n\n")
+	// Description field (textarea)
+	formContent.WriteString(formLabelStyle.Render("Description (arrows to scroll, Enter for new line):") + "\n")
+	formContent.WriteString(m.formTextarea.View() + "\n")
+	formContent.WriteString(formHelpStyle.Render("  (Use arrow keys to scroll if content exceeds 8 lines • Ctrl+S to save)") + "\n\n")
 
 	// Priority field
 	formContent.WriteString(formLabelStyle.Render("Priority (1-5, 1=highest):") + "\n")
-	formContent.WriteString(m.formInputs[2].View() + "\n\n")
+	formContent.WriteString(m.formInputs[1].View() + "\n\n")
 
 	// Progress field
 	formContent.WriteString(formLabelStyle.Render("Progress (0-100):") + "\n")
-	formContent.WriteString(m.formInputs[3].View() + "\n\n")
+	formContent.WriteString(m.formInputs[2].View() + "\n\n")
 
 	// Tags field
 	formContent.WriteString(formLabelStyle.Render("Tags (comma-separated):") + "\n")
-	formContent.WriteString(m.formInputs[4].View() + "\n\n")
+	formContent.WriteString(m.formInputs[3].View() + "\n\n")
 
 	// Parent task ID field
 	formContent.WriteString(formLabelStyle.Render("Parent Task ID (for subtasks):") + "\n")
-	formContent.WriteString(m.formInputs[5].View() + "\n")
+	formContent.WriteString(m.formInputs[4].View() + "\n")
 	if m.viewMode == ViewModeEdit && m.formTask != nil && m.formTask.ParentID != nil {
 		formContent.WriteString(formHelpStyle.Render("  (clear to remove parent relationship)") + "\n")
 	}
@@ -246,13 +256,13 @@ func (m *Model) getSubtasksForTask(parentID string) []*models.Task {
 
 // saveForm validates and saves the form
 func (m Model) saveForm() (tea.Model, tea.Cmd) {
-	// Get values from 6 form inputs
+	// Get values from form inputs and textarea
 	title := strings.TrimSpace(m.formInputs[0].Value())
-	description := strings.TrimSpace(m.formInputs[1].Value())
-	priorityStr := strings.TrimSpace(m.formInputs[2].Value())
-	progressStr := strings.TrimSpace(m.formInputs[3].Value())
-	tagsStr := strings.TrimSpace(m.formInputs[4].Value())
-	parentIDStr := strings.TrimSpace(m.formInputs[5].Value())
+	description := strings.TrimSpace(m.formTextarea.Value())
+	priorityStr := strings.TrimSpace(m.formInputs[1].Value())
+	progressStr := strings.TrimSpace(m.formInputs[2].Value())
+	tagsStr := strings.TrimSpace(m.formInputs[3].Value())
+	parentIDStr := strings.TrimSpace(m.formInputs[4].Value())
 
 	// Validate title
 	if title == "" {
@@ -300,11 +310,18 @@ func (m Model) saveForm() (tea.Model, tea.Cmd) {
 	var parentID *string
 	if parentIDStr != "" {
 		// Validate parent exists
-		_, err := storage.GetTask(m.db, parentIDStr)
+		parent, err := storage.GetTask(m.db, parentIDStr)
 		if err != nil {
 			m.formErr = fmt.Errorf("parent task not found: %s", parentIDStr)
 			return m, nil
 		}
+
+		// Prevent multi-level nesting (subtasks cannot have subtasks)
+		if parent.ParentID != nil {
+			m.formErr = fmt.Errorf("cannot create subtask of subtask (max 1 level nesting)")
+			return m, nil
+		}
+
 		parentID = &parentIDStr
 	}
 

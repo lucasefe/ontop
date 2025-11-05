@@ -1,4 +1,4 @@
-.PHONY: build test run install clean help
+.PHONY: build test run install clean lint help
 
 # Build the ontop binary
 build:
@@ -21,6 +21,14 @@ clean:
 	rm -f ontop
 	rm -f ~/.ontop/tasks.db
 
+# Format and lint the code
+lint:
+	@echo "Formatting code..."
+	go fmt ./...
+	@echo "Running golangci-lint..."
+	golangci-lint run
+	@echo "Linting complete!"
+
 # Show available targets
 help:
 	@echo "Available targets:"
@@ -29,3 +37,4 @@ help:
 	@echo "  run     - Run ontop directly (TUI mode)"
 	@echo "  install - Install ontop to \$$GOPATH/bin"
 	@echo "  clean   - Remove binary and test database"
+	@echo "  lint    - Format and lint code (go fmt, go vet, golangci-lint)"

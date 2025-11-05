@@ -21,6 +21,7 @@ type KeyMap struct {
 	Tab           key.Binding
 	Sort          key.Binding
 	ToggleArchive key.Binding
+	Save          key.Binding
 }
 
 // ShortHelp returns keybindings to be shown in the mini help view
@@ -108,6 +109,10 @@ func DefaultKeyMap() KeyMap {
 		ToggleArchive: key.NewBinding(
 			key.WithKeys("z"),
 			key.WithHelp("z", "toggle archive view"),
+		),
+		Save: key.NewBinding(
+			key.WithKeys("ctrl+s"),
+			key.WithHelp("ctrl+s", "save form"),
 		),
 	}
 }

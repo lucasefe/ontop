@@ -10,18 +10,15 @@ import (
 
 var (
 	// Gruvbox colors
-	gruvboxBg0     = lipgloss.Color("#282828")
-	gruvboxBg1     = lipgloss.Color("#3c3836")
-	gruvboxBg2     = lipgloss.Color("#504945")
-	gruvboxFg      = lipgloss.Color("#ebdbb2")
-	gruvboxGray    = lipgloss.Color("#928374")
-	gruvboxRed     = lipgloss.Color("#fb4934")
-	gruvboxOrange  = lipgloss.Color("#fe8019")
-	gruvboxYellow  = lipgloss.Color("#fabd2f")
-	gruvboxGreen   = lipgloss.Color("#b8bb26")
-	gruvboxAqua    = lipgloss.Color("#8ec07c")
-	gruvboxBlue    = lipgloss.Color("#83a598")
-	gruvboxPurple  = lipgloss.Color("#d3869b")
+	gruvboxBg0    = lipgloss.Color("#282828")
+	gruvboxBg2    = lipgloss.Color("#504945")
+	gruvboxFg     = lipgloss.Color("#ebdbb2")
+	gruvboxGray   = lipgloss.Color("#928374")
+	gruvboxRed    = lipgloss.Color("#fb4934")
+	gruvboxOrange = lipgloss.Color("#fe8019")
+	gruvboxYellow = lipgloss.Color("#fabd2f")
+	gruvboxGreen  = lipgloss.Color("#b8bb26")
+	gruvboxAqua   = lipgloss.Color("#8ec07c")
 
 	// Column styles (width will be set dynamically)
 	columnStyle = lipgloss.NewStyle().
@@ -166,7 +163,8 @@ func (m Model) renderColumn(title string, tasks []*models.Task, columnIndex int)
 		}
 
 		isSelected := columnIndex == m.currentColumn && i == m.selectedTask
-		cardContent := m.renderTaskCard(task, columnWidth-4) // Subtract padding
+		isSubtask := task.ParentID != nil
+		cardContent := m.renderTaskCard(task, columnWidth-4, isSubtask) // Subtract padding
 
 		if isSelected {
 			b.WriteString(selectedTaskStyle.Render(cardContent))
@@ -190,7 +188,13 @@ func (m Model) renderColumn(title string, tasks []*models.Task, columnIndex int)
 }
 
 // renderTaskCard renders a single task card as a single line
-func (m Model) renderTaskCard(task *models.Task, maxWidth int) string {
+func (m Model) renderTaskCard(task *models.Task, maxWidth int, isSubtask bool) string {
+	// Add dash prefix for subtasks
+	prefix := ""
+	if isSubtask {
+		prefix = "- "
+	}
+
 	// Priority indicator
 	priorityColor, ok := priorityColors[task.Priority]
 	if !ok {
@@ -207,8 +211,9 @@ func (m Model) renderTaskCard(task *models.Task, maxWidth int) string {
 	timeStyle := lipgloss.NewStyle().Foreground(gruvboxGray)
 
 	// Calculate space for title
-	// Format: "P1 title... 01/02"
-	reservedSpace := 3 + 1 + 5 + 1 // "P1 " + " " + "01/02"
+	// Format: "- P1 title... 01/02" (prefix + priority + title + date)
+	prefixLen := len(prefix)
+	reservedSpace := prefixLen + 3 + 1 + 5 + 1 // prefix + "P1 " + " " + "01/02"
 	titleMaxLen := maxWidth - reservedSpace
 	if titleMaxLen < 10 {
 		titleMaxLen = 10
@@ -223,8 +228,9 @@ func (m Model) renderTaskCard(task *models.Task, maxWidth int) string {
 		title = title[:titleMaxLen-3] + "..."
 	}
 
-	// Build single line: "P1 title... 01/02"
-	return fmt.Sprintf("%s %s %s",
+	// Build single line: "- P1 title... 01/02"
+	return fmt.Sprintf("%s%s %s %s",
+		prefix,
 		priorityStr,
 		title,
 		timeStyle.Render(createdStr),

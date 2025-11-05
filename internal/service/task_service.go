@@ -26,7 +26,11 @@ func CalculateProgress(db *sql.DB, taskID string) (int, error) {
 	if err != nil {
 		return 0, fmt.Errorf("failed to query subtasks: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			fmt.Printf("Warning: Failed to close rows: %v\n", err)
+		}
+	}()
 
 	var subtasks []*models.Task
 	for rows.Next() {

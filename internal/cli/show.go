@@ -85,7 +85,15 @@ EXAMPLES:
 		fmt.Println(strings.Repeat("=", 70))
 		fmt.Printf("TASK: %s\n", task.ID)
 		fmt.Println(strings.Repeat("=", 70))
-		fmt.Printf("Description:  %s\n", task.Description)
+		// Show title if present, fallback to description
+		displayText := task.Description
+		if task.Title != "" {
+			displayText = task.Title
+		}
+		fmt.Printf("Title:        %s\n", displayText)
+		if task.Description != "" && task.Description != displayText {
+			fmt.Printf("Description:  %s\n", task.Description)
+		}
 		fmt.Printf("Priority:     P%d (1=highest, 5=lowest)\n", task.Priority)
 		fmt.Printf("Column:       %s\n", formatColumnDisplay(task.Column))
 		fmt.Printf("Progress:     %d%%\n", task.Progress)
@@ -117,11 +125,16 @@ EXAMPLES:
 				if st.Progress > 0 {
 					progressStr = fmt.Sprintf(" (%d%%)", st.Progress)
 				}
+				// Show title if present, fallback to description
+				subtaskText := st.Description
+				if st.Title != "" {
+					subtaskText = st.Title
+				}
 				fmt.Printf("  - [%s] P%d | %s | %s%s\n",
 					st.ID,
 					st.Priority,
 					formatColumnDisplay(st.Column),
-					st.Description,
+					subtaskText,
 					progressStr,
 				)
 			}

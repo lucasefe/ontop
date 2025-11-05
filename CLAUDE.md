@@ -210,3 +210,10 @@ Use `service.GenerateID()` for new tasks - don't create IDs manually. Format is 
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->
+
+## Active Technologies
+- Go 1.25.3+ (002-subtask-display-edit)
+- SQLite (local file: `~/.ontop/tasks.db`) with WAL mode (002-subtask-display-edit)
+
+## Recent Changes
+- 002-subtask-display-edit: Added Go 1.25.3+

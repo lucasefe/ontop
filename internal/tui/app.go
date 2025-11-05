@@ -165,7 +165,7 @@ func (m Model) handleKanbanKeys(msg tea.KeyMsg, keys KeyMap) (tea.Model, tea.Cmd
 	// New task
 	if key.Matches(msg, keys.New) {
 		m.viewMode = ViewModeCreate
-		m.initCreateForm()
+		m.initCreateForm(nil) // Pass nil for top-level task
 		return m, nil
 	}
 
@@ -219,6 +219,15 @@ func (m Model) handleDetailKeys(msg tea.KeyMsg, keys KeyMap) (tea.Model, tea.Cmd
 		m.viewMode = ViewModeKanban
 		m.detailTask = nil
 		m.detailSubtasks = nil
+		return m, nil
+	}
+
+	// Create subtask (press 'n' in detail view)
+	if key.Matches(msg, keys.New) {
+		if m.detailTask != nil {
+			m.viewMode = ViewModeCreate
+			m.initCreateForm(&m.detailTask.ID) // Pass parent ID to pre-fill
+		}
 		return m, nil
 	}
 
@@ -352,19 +361,49 @@ func (m Model) handleFormKeys(msg tea.KeyMsg, keys KeyMap) (tea.Model, tea.Cmd) 
 		return m, nil
 	}
 
-	// Save
-	if key.Matches(msg, keys.Select) {
+	// Save with Ctrl+S (works from any field)
+	if key.Matches(msg, keys.Save) {
 		return m.saveForm()
 	}
 
-	// Tab to next field
+	// Save with Enter - but NOT if we're in the textarea (focus index 1)
+	// In textarea, Enter should add newline, not save
+	if key.Matches(msg, keys.Select) && m.formFocusIndex != 1 {
+		return m.saveForm()
+	}
+
+	// Tab to next field (total 6 fields: 0-5)
+	// 0: Title, 1: Description (textarea), 2: Priority, 3: Progress, 4: Tags, 5: Parent ID
 	if key.Matches(msg, keys.Tab) {
-		m.formFocusIndex = (m.formFocusIndex + 1) % len(m.formInputs)
-		for i := range m.formInputs {
-			if i == m.formFocusIndex {
-				m.formInputs[i].Focus()
-			} else {
-				m.formInputs[i].Blur()
+		// Blur current field
+		if m.formFocusIndex == 1 {
+			m.formTextarea.Blur()
+		} else {
+			// Map focus index to formInputs index
+			// Focus 0 -> formInputs[0]
+			// Focus 2+ -> formInputs[focus-1]
+			inputIdx := m.formFocusIndex
+			if inputIdx > 1 {
+				inputIdx--
+			}
+			if inputIdx >= 0 && inputIdx < len(m.formInputs) {
+				m.formInputs[inputIdx].Blur()
+			}
+		}
+
+		// Move to next field
+		m.formFocusIndex = (m.formFocusIndex + 1) % 6
+
+		// Focus new field
+		if m.formFocusIndex == 1 {
+			m.formTextarea.Focus()
+		} else {
+			inputIdx := m.formFocusIndex
+			if inputIdx > 1 {
+				inputIdx--
+			}
+			if inputIdx >= 0 && inputIdx < len(m.formInputs) {
+				m.formInputs[inputIdx].Focus()
 			}
 		}
 		return m, nil
@@ -373,9 +412,19 @@ func (m Model) handleFormKeys(msg tea.KeyMsg, keys KeyMap) (tea.Model, tea.Cmd) 
 	// Clear form error when user types (so error disappears when they fix it)
 	m.formErr = nil
 
-	// Update the focused input
-	if m.formFocusIndex >= 0 && m.formFocusIndex < len(m.formInputs) {
-		m.formInputs[m.formFocusIndex], cmd = m.formInputs[m.formFocusIndex].Update(msg)
+	// Update the focused field
+	if m.formFocusIndex == 1 {
+		// Textarea for description
+		m.formTextarea, cmd = m.formTextarea.Update(msg)
+	} else {
+		// Text input field
+		inputIdx := m.formFocusIndex
+		if inputIdx > 1 {
+			inputIdx--
+		}
+		if inputIdx >= 0 && inputIdx < len(m.formInputs) {
+			m.formInputs[inputIdx], cmd = m.formInputs[inputIdx].Update(msg)
+		}
 	}
 
 	return m, cmd

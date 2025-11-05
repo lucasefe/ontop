@@ -35,7 +35,7 @@ func NewDB(path string) (*sql.DB, error) {
 
 	// Enable WAL mode for better concurrency
 	if _, err := db.Exec("PRAGMA journal_mode=WAL"); err != nil {
-		db.Close()
+		_ = db.Close() // Ignore close error since we're already handling an error
 		return nil, fmt.Errorf("failed to enable WAL mode: %w", err)
 	}
 
@@ -135,7 +135,9 @@ func ListTasks(db *sql.DB, filters map[string]interface{}) ([]*models.Task, erro
 	if err != nil {
 		return nil, fmt.Errorf("failed to query tasks: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		_ = rows.Close() // Best effort close
+	}()
 
 	var tasks []*models.Task
 	for rows.Next() {
@@ -185,13 +187,24 @@ func UpdateTask(db *sql.DB, task *models.Task) error {
 	return nil
 }
 
-// DeleteTask soft-deletes a task by setting deleted_at timestamp
+// DeleteTask soft-deletes a task and all its subtasks by setting deleted_at timestamp
 func DeleteTask(db *sql.DB, id string) error {
+	now := time.Now().Format(time.RFC3339)
+
+	// First, soft-delete all subtasks
+	subtasksQuery := `UPDATE tasks SET deleted_at = ? WHERE parent_id = ? AND deleted_at IS NULL`
+	_, err := db.Exec(subtasksQuery, now, id)
+	if err != nil {
+		return fmt.Errorf("failed to delete subtasks: %w", err)
+	}
+
+	// Then soft-delete the parent task
 	query := `UPDATE tasks SET deleted_at = ? WHERE id = ?`
-	_, err := db.Exec(query, time.Now().Format(time.RFC3339), id)
+	_, err = db.Exec(query, now, id)
 	if err != nil {
 		return fmt.Errorf("failed to delete task: %w", err)
 	}
+
 	return nil
 }
 

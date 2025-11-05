@@ -39,7 +39,7 @@ func InitSchema(db *sql.DB) error {
 	}
 
 	// Add title column if it doesn't exist (migration for existing databases)
-	_, err = db.Exec(`
+	_, _ = db.Exec(`
 		ALTER TABLE tasks ADD COLUMN title TEXT NOT NULL DEFAULT '';
 	`)
 	// Ignore error if column already exists
