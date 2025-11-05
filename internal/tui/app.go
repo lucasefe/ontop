@@ -1,10 +1,12 @@
 package tui
 
 import (
+	"log"
 	"time"
 
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/lucasefe/ontop/internal/config"
 	"github.com/lucasefe/ontop/internal/models"
 	"github.com/lucasefe/ontop/internal/storage"
 )
@@ -46,6 +48,19 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 		m.tasks = msg.tasks
+
+		// If we just moved a task, restore focus on it in its new location
+		if m.lastMovedTaskID != "" {
+			columnTasks := m.GetTasksByColumn(m.GetCurrentColumnName())
+			for i, task := range columnTasks {
+				if task.ID == m.lastMovedTaskID {
+					m.selectedTask = i
+					break
+				}
+			}
+			m.lastMovedTaskID = "" // Clear the tracking
+		}
+
 		return m, nil
 
 	case tea.KeyMsg:
@@ -92,37 +107,124 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 // handleKanbanKeys handles key presses in kanban view
 func (m Model) handleKanbanKeys(msg tea.KeyMsg, keys KeyMap) (tea.Model, tea.Cmd) {
-	// Vertical navigation (j/k)
-	if key.Matches(msg, keys.Down) {
-		columnTasks := m.GetTasksByColumn(m.GetCurrentColumnName())
-		if m.selectedTask < len(columnTasks)-1 {
-			m.selectedTask++
+	// Context-sensitive navigation based on view layout
+	if m.viewLayout == LayoutRow {
+		// ROW MODE: up/down navigates tasks seamlessly, auto-switching rows at boundaries
+		if key.Matches(msg, keys.Down) {
+			columnTasks := m.GetTasksByColumn(m.GetCurrentColumnName())
+			if m.selectedTask < len(columnTasks)-1 {
+				// Move to next task in current row
+				m.selectedTask++
+			} else if m.currentColumn < 2 {
+				// At end of row, move to next row (first task)
+				m.currentColumn++
+				m.selectedTask = 0
+			}
+			return m, nil
 		}
-		return m, nil
+
+		if key.Matches(msg, keys.Up) {
+			if m.selectedTask > 0 {
+				// Move to previous task in current row
+				m.selectedTask--
+			} else if m.currentColumn > 0 {
+				// At top of row, move to previous row (last task)
+				m.currentColumn--
+				prevColumnTasks := m.GetTasksByColumn(m.GetCurrentColumnName())
+				if len(prevColumnTasks) > 0 {
+					m.selectedTask = len(prevColumnTasks) - 1
+				} else {
+					m.selectedTask = 0
+				}
+			}
+			return m, nil
+		}
+
+		// Left/Right do nothing in row mode (or could be used for other features)
+		if key.Matches(msg, keys.Left) {
+			return m, nil
+		}
+
+		if key.Matches(msg, keys.Right) {
+			return m, nil
+		}
+	} else {
+		// COLUMN MODE: up/down navigates within column, left/right switches columns
+		if key.Matches(msg, keys.Down) {
+			columnTasks := m.GetTasksByColumn(m.GetCurrentColumnName())
+			if m.selectedTask < len(columnTasks)-1 {
+				m.selectedTask++
+			}
+			return m, nil
+		}
+
+		if key.Matches(msg, keys.Up) {
+			if m.selectedTask > 0 {
+				m.selectedTask--
+			}
+			return m, nil
+		}
+
+		if key.Matches(msg, keys.Left) {
+			if m.currentColumn > 0 {
+				m.currentColumn--
+				m.selectedTask = 0
+			}
+			return m, nil
+		}
+
+		if key.Matches(msg, keys.Right) {
+			if m.currentColumn < 2 {
+				m.currentColumn++
+				m.selectedTask = 0
+			}
+			return m, nil
+		}
 	}
 
-	if key.Matches(msg, keys.Up) {
-		if m.selectedTask > 0 {
-			m.selectedTask--
+	// Quick move with Shift+navigation keys (context-sensitive)
+	if m.viewLayout == LayoutColumn {
+		// COLUMN MODE: Shift+H moves left (to previous workflow stage), Shift+L moves right (to next workflow stage)
+		if key.Matches(msg, keys.QuickMoveLeft) {
+			task := m.GetSelectedTask()
+			if task != nil && m.currentColumn > 0 {
+				m.moveTask = task
+				m.moveSelection = m.currentColumn - 1
+				return m.confirmMove()
+			}
+			return m, nil
 		}
-		return m, nil
-	}
 
-	// Horizontal navigation (h/l)
-	if key.Matches(msg, keys.Left) {
-		if m.currentColumn > 0 {
-			m.currentColumn--
-			m.selectedTask = 0
+		if key.Matches(msg, keys.QuickMoveRight) {
+			task := m.GetSelectedTask()
+			if task != nil && m.currentColumn < 2 {
+				m.moveTask = task
+				m.moveSelection = m.currentColumn + 1
+				return m.confirmMove()
+			}
+			return m, nil
 		}
-		return m, nil
-	}
+	} else {
+		// ROW MODE: Shift+K moves up (to previous workflow stage), Shift+J moves down (to next workflow stage)
+		if key.Matches(msg, keys.QuickMoveUp) {
+			task := m.GetSelectedTask()
+			if task != nil && m.currentColumn > 0 {
+				m.moveTask = task
+				m.moveSelection = m.currentColumn - 1
+				return m.confirmMove()
+			}
+			return m, nil
+		}
 
-	if key.Matches(msg, keys.Right) {
-		if m.currentColumn < 2 {
-			m.currentColumn++
-			m.selectedTask = 0
+		if key.Matches(msg, keys.QuickMoveDown) {
+			task := m.GetSelectedTask()
+			if task != nil && m.currentColumn < 2 {
+				m.moveTask = task
+				m.moveSelection = m.currentColumn + 1
+				return m.confirmMove()
+			}
+			return m, nil
 		}
-		return m, nil
 	}
 
 	// Enter detail view
@@ -183,6 +285,11 @@ func (m Model) handleKanbanKeys(msg tea.KeyMsg, keys KeyMap) (tea.Model, tea.Cmd
 		m.showArchived = !m.showArchived
 		m.selectedTask = 0
 		return m, m.loadTasks
+	}
+
+	// Toggle view layout (column vs row)
+	if key.Matches(msg, keys.ToggleView) {
+		return m.handleToggleView()
 	}
 
 	// Archive/Unarchive task (toggle based on current view)
@@ -473,6 +580,12 @@ func (m Model) confirmMove() (tea.Model, tea.Cmd) {
 		return m, tea.Quit
 	}
 
+	// Track the moved task ID to restore focus after reload
+	m.lastMovedTaskID = m.moveTask.ID
+
+	// Update current column to follow the moved task
+	m.currentColumn = m.moveSelection
+
 	// Return to kanban and reload tasks
 	m.viewMode = ViewModeKanban
 	m.moveTask = nil
@@ -487,6 +600,9 @@ func (m Model) View() string {
 
 	switch m.viewMode {
 	case ViewModeKanban:
+		if m.viewLayout == LayoutRow {
+			return m.renderKanbanRows()
+		}
 		return m.renderKanban()
 	case ViewModeDetail:
 		return m.renderDetail()
@@ -499,4 +615,35 @@ func (m Model) View() string {
 	}
 
 	return ""
+}
+
+// handleToggleView toggles between column and row layouts
+func (m Model) handleToggleView() (Model, tea.Cmd) {
+	// Toggle layout
+	if m.viewLayout == LayoutColumn {
+		m.viewLayout = LayoutRow
+	} else {
+		m.viewLayout = LayoutColumn
+	}
+
+	// Reset scroll offsets when toggling
+	m.rowScrollOffset = make(map[int]int)
+
+	// Save preference to config asynchronously
+	go func() {
+		cfg := config.Config{
+			UI: config.UIConfig{
+				ViewMode: "column",
+			},
+		}
+		if m.viewLayout == LayoutRow {
+			cfg.UI.ViewMode = "row"
+		}
+
+		if err := config.Save(cfg); err != nil {
+			log.Printf("Failed to save view mode preference: %v", err)
+		}
+	}()
+
+	return m, nil
 }

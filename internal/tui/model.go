@@ -2,11 +2,13 @@ package tui
 
 import (
 	"database/sql"
+	"log"
 
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/lucasefe/ontop/internal/config"
 	"github.com/lucasefe/ontop/internal/models"
 	"github.com/lucasefe/ontop/internal/service"
 )
@@ -23,6 +25,14 @@ const (
 	ViewModeDeleteConfirm
 )
 
+// ViewLayout represents the visual organization of the kanban board
+type ViewLayout int
+
+const (
+	LayoutColumn ViewLayout = iota // Vertical columns (existing)
+	LayoutRow                       // Horizontal rows (new)
+)
+
 // SortMode is an alias to service.SortMode for backward compatibility
 type SortMode = service.SortMode
 
@@ -36,18 +46,21 @@ const (
 
 // Model represents the Bubbletea application state
 type Model struct {
-	db             *sql.DB
-	tasks          []*models.Task
-	currentColumn  int // 0=inbox, 1=in_progress, 2=done
-	selectedTask   int // Index within current column
-	viewMode       ViewMode
-	sortMode       SortMode // How tasks are sorted in columns
-	showArchived   bool     // Show archived tasks instead of active
-	detailTask     *models.Task
-	detailSubtasks []*models.Task
-	moveTask       *models.Task
-	moveSelection  int          // Which column to move to
-	deleteTask     *models.Task // Task pending deletion
+	db              *sql.DB
+	tasks           []*models.Task
+	currentColumn   int // 0=inbox, 1=in_progress, 2=done
+	selectedTask    int // Index within current column
+	viewMode        ViewMode
+	viewLayout      ViewLayout     // Layout mode for Kanban view (column or row)
+	sortMode        SortMode       // How tasks are sorted in columns
+	showArchived    bool           // Show archived tasks instead of active
+	rowScrollOffset map[int]int    // Horizontal scroll offsets per row (row mode only)
+	detailTask      *models.Task
+	detailSubtasks  []*models.Task
+	moveTask        *models.Task
+	moveSelection   int          // Which column to move to
+	deleteTask      *models.Task // Task pending deletion
+	lastMovedTaskID string       // Track moved task to restore focus
 	// Form fields
 	formInputs     []textinput.Model
 	formTextarea   textarea.Model // For multiline description
@@ -75,16 +88,30 @@ func NewModel(db *sql.DB) Model {
 	h.Styles.ShortSeparator = h.Styles.ShortSeparator.Foreground(lipgloss.Color(gruvboxGray))
 	h.Styles.FullSeparator = h.Styles.FullSeparator.Foreground(lipgloss.Color(gruvboxGray))
 
+	// Load config to get view layout preference
+	cfg, err := config.Load()
+	if err != nil {
+		log.Printf("Warning: Failed to load config: %v (using defaults)", err)
+	}
+
+	// Parse view mode from config
+	viewLayout := LayoutColumn // Default
+	if cfg.UI.ViewMode == "row" {
+		viewLayout = LayoutRow
+	}
+
 	return Model{
-		db:            db,
-		currentColumn: 0,
-		selectedTask:  0,
-		viewMode:      ViewModeKanban,
-		sortMode:      SortByPriority,
-		keys:          DefaultKeyMap(),
-		help:          h,
-		width:         80,
-		height:        24,
+		db:              db,
+		currentColumn:   0,
+		selectedTask:    0,
+		viewMode:        ViewModeKanban,
+		viewLayout:      viewLayout,
+		sortMode:        SortByPriority,
+		rowScrollOffset: make(map[int]int),
+		keys:            DefaultKeyMap(),
+		help:            h,
+		width:           80,
+		height:          24,
 	}
 }
 

@@ -21,7 +21,12 @@ type KeyMap struct {
 	Tab           key.Binding
 	Sort          key.Binding
 	ToggleArchive key.Binding
+	ToggleView    key.Binding
 	Save          key.Binding
+	QuickMoveLeft  key.Binding
+	QuickMoveRight key.Binding
+	QuickMoveUp    key.Binding
+	QuickMoveDown  key.Binding
 }
 
 // ShortHelp returns keybindings to be shown in the mini help view
@@ -35,7 +40,8 @@ func (k KeyMap) FullHelp() [][]key.Binding {
 		{k.Up, k.Down, k.Left, k.Right},
 		{k.Select, k.Back, k.New, k.Edit},
 		{k.Move, k.Archive, k.Delete, k.Refresh},
-		{k.Sort, k.ToggleArchive, k.Help, k.Quit},
+		{k.Sort, k.ToggleArchive, k.ToggleView, k.Help, k.Quit},
+		{k.QuickMoveLeft, k.QuickMoveRight, k.QuickMoveUp, k.QuickMoveDown},
 	}
 }
 
@@ -109,6 +115,26 @@ func DefaultKeyMap() KeyMap {
 		ToggleArchive: key.NewBinding(
 			key.WithKeys("z"),
 			key.WithHelp("z", "toggle archive view"),
+		),
+		ToggleView: key.NewBinding(
+			key.WithKeys("v"),
+			key.WithHelp("v", "toggle view layout"),
+		),
+		QuickMoveLeft: key.NewBinding(
+			key.WithKeys("H"),
+			key.WithHelp("H", "quick move left"),
+		),
+		QuickMoveRight: key.NewBinding(
+			key.WithKeys("L"),
+			key.WithHelp("L", "quick move right"),
+		),
+		QuickMoveUp: key.NewBinding(
+			key.WithKeys("K"),
+			key.WithHelp("K", "quick move up"),
+		),
+		QuickMoveDown: key.NewBinding(
+			key.WithKeys("J"),
+			key.WithHelp("J", "quick move down"),
 		),
 		Save: key.NewBinding(
 			key.WithKeys("ctrl+s"),
