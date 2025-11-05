@@ -1,22 +1,26 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version Change: 2.0.0 → 2.1.0
-Rationale: MINOR version - Added dual-mode principle and vim-style interaction guidance
+Version Change: 2.1.0 → 2.2.0
+Rationale: MINOR version - Added Documentation Currency principle (new principle added)
 
 Modified Principles:
-- Expanded: II. TUI-Native Design → now includes dual-mode architecture
-- Added: III. Dual-Mode Architecture (TUI + CLI)
+- None
 
 Added Sections:
-- Mode interaction details (TUI for interactive, CLI for automation)
-- Vim-style keyboard navigation guidance
+- IV. Documentation Currency - Requirement to keep README synchronized with features
 
 Template Updates:
-- ⚠️ .specify/templates/* - Should consider both modes in planning
-- ⚠️ .claude/commands/* - May need adjustment for dual-mode development
+- ✅ .specify/templates/plan-template.md - Constitution Check section already flexible
+- ✅ .specify/templates/spec-template.md - No changes needed (requirements-focused)
+- ✅ .specify/templates/tasks-template.md - Polish phase includes documentation updates
+- ⚠️ README.md - NEEDS UPDATE to include subtask features from spec 002
 
-Date: 2025-11-04
+Follow-up TODOs:
+- Update README.md to document subtask hierarchy features (in progress)
+- Consider adding documentation validation to CI/CD pipeline in future
+
+Date: 2025-11-05
 -->
 
 # OnTop Constitution
@@ -59,6 +63,23 @@ Both modes operate on the same underlying data store and MUST maintain consisten
 require simple, scriptable commands (CLI). Supporting both modes makes the tool useful in different
 contexts without forcing awkward compromises.
 
+### IV. Documentation Currency
+
+The README MUST remain synchronized with feature implementations and project capabilities. When new
+features are added or existing features are modified, the documentation MUST be updated in the same
+development cycle to reflect the current state of the application.
+
+**Rationale**: Stale documentation misleads users and degrades trust in the project. For personal
+projects maintained intermittently, accurate documentation serves as memory aid when returning
+after time away. Documentation drift creates confusion about what the tool actually does versus
+what it's documented to do.
+
+**Requirements**:
+- README MUST document all user-facing features (TUI and CLI)
+- Feature additions MUST include corresponding README updates
+- Breaking changes MUST update relevant documentation sections
+- Examples and usage patterns MUST reflect actual current behavior
+
 ## Governance
 
 ### Amendment Procedure
@@ -69,4 +90,4 @@ the version number and date when making changes:
 - **MINOR**: New principles added
 - **PATCH**: Clarifications or wording improvements
 
-**Version**: 2.1.0 | **Ratified**: 2025-11-04 | **Last Amended**: 2025-11-04
+**Version**: 2.2.0 | **Ratified**: 2025-11-04 | **Last Amended**: 2025-11-05
