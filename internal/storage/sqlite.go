@@ -13,7 +13,7 @@ import (
 )
 
 // NewDB creates a new database connection at the specified path
-// Default path: ~/.ontop/tasks.db
+// Default path: ~/.config/ontop/ontop.db
 func NewDB(path string) (*sql.DB, error) {
 	// If path is empty, use default
 	if path == "" {
@@ -21,11 +21,11 @@ func NewDB(path string) (*sql.DB, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to get home directory: %w", err)
 		}
-		ontopDir := filepath.Join(home, ".ontop")
+		ontopDir := filepath.Join(home, ".config", "ontop")
 		if err := os.MkdirAll(ontopDir, 0755); err != nil {
-			return nil, fmt.Errorf("failed to create .ontop directory: %w", err)
+			return nil, fmt.Errorf("failed to create .config/ontop directory: %w", err)
 		}
-		path = filepath.Join(ontopDir, "tasks.db")
+		path = filepath.Join(ontopDir, "ontop.db")
 	}
 
 	db, err := sql.Open("sqlite", path)

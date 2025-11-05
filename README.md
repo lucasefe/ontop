@@ -202,7 +202,7 @@ Use traditional command-line commands for task management:
 
 ### Global Options
 
-- `--db-path` - Specify custom database path (default: `~/.ontop/tasks.db`)
+- `--db-path` - Specify custom database path (default: `~/.config/ontop/ontop.db`)
 
 Example:
 ```bash
@@ -252,7 +252,7 @@ make help
 
 ## Database
 
-OnTop uses SQLite for local storage. By default, the database is stored at `~/.ontop/tasks.db`.
+OnTop uses SQLite for local storage. By default, the database is stored at `~/.config/ontop/ontop.db`.
 
 The schema is automatically created and migrated on first run.
 
