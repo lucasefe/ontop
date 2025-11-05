@@ -17,11 +17,13 @@ A modern, flexible task management tool built in Go that works both as an intera
 ## Features
 
 - **Dual-Mode Interface**: Use as an interactive Kanban board TUI or run commands from the terminal
+- **Flexible View Layouts**: Toggle between column (vertical Kanban) and row (horizontal stages) layouts
 - **Kanban Workflow**: Organize tasks across columns (Inbox, In Progress, Done)
 - **Hierarchical Subtasks**: Create and manage subtasks with visual indentation in both TUI and CLI
 - **SQLite Storage**: Local database storage with automatic migrations
 - **Rich CLI Commands**: Add, list, show, move, and update tasks from the command line
 - **Terminal UI**: Beautiful, interactive Kanban board with vim-style navigation powered by Bubble Tea
+- **Quick Move Actions**: Move tasks between workflow stages instantly with Shift+arrow keys
 - **Multiline Descriptions**: Rich text descriptions with scrollable textarea support
 - **Archive System**: Archive completed tasks to keep your workspace clean
 
@@ -150,7 +152,9 @@ Launch the interactive Kanban board by running `ontop` without any arguments:
 ```
 
 In TUI mode, you can:
-- Navigate tasks with vim-style keys (j/k for up/down, h/l for columns)
+- Toggle between column (vertical Kanban) and row (horizontal stages) layouts (press 'v')
+- Navigate tasks with vim-style keys - behavior adapts to current layout mode
+- Quick move tasks between workflow stages with Shift+arrow keys
 - View hierarchical task structure with subtasks indented below parents
 - Create subtasks directly from detail view (press 'n' while viewing a task)
 - View task details with multiline descriptions
@@ -160,6 +164,8 @@ In TUI mode, you can:
 - Delete tasks with confirmation (press 'd')
 - Sort tasks by priority, description, created, or updated date (press 's')
 - Toggle between active and archived views (press 'z')
+
+Your view layout preference is automatically saved to `~/.config/ontop/ontop.toml`.
 
 ### CLI Mode
 
@@ -199,17 +205,37 @@ Use traditional command-line commands for task management:
 
 ### TUI Keyboard Shortcuts
 
-- `j/k` or `↓/↑` - Navigate tasks (up/down)
-- `h/l` or `←/→` - Switch columns (left/right)
+#### View & Navigation
+
+- `v` - Toggle view layout (column ↔ row)
+- `j/k` or `↓/↑` - Navigate tasks (context-sensitive)
+  - **Column mode**: Move up/down within current column
+  - **Row mode**: Move up/down within row and between rows
+- `h/l` or `←/→` - Switch columns (column mode only)
 - `Enter` - View task details / Select
+
+#### Quick Move (Shift + Navigation)
+
+- **Column Mode:**
+  - `Shift+H` - Move task to previous workflow stage (left column)
+  - `Shift+L` - Move task to next workflow stage (right column)
+- **Row Mode:**
+  - `Shift+K` - Move task to previous workflow stage (up row)
+  - `Shift+J` - Move task to next workflow stage (down row)
+
+#### Task Actions
+
 - `n` - Create new task (in kanban) or subtask (in detail view)
 - `e` - Edit selected task
-- `m` - Move task to different column
+- `m` - Move task to different column (interactive)
 - `d` - Delete task (with confirmation)
 - `a` - Archive/unarchive task
 - `z` - Toggle archived view
 - `s` - Cycle sort mode (priority/description/created/updated)
 - `r` - Refresh task list
+
+#### System
+
 - `?` - Toggle help
 - `q` or `Ctrl+C` - Quit
 - `Esc` - Go back / Cancel
@@ -224,6 +250,17 @@ Example:
 ```bash
 ./ontop --db-path /path/to/custom.db list
 ```
+
+### Configuration
+
+OnTop stores user preferences in `~/.config/ontop/ontop.toml`:
+
+```toml
+[ui]
+view_mode = "column"  # or "row"
+```
+
+The view layout preference is automatically saved when you toggle with the `v` key in TUI mode.
 
 ## Development
 
