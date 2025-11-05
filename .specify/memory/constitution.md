@@ -1,50 +1,72 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+SYNC IMPACT REPORT
+==================
+Version Change: 2.0.0 → 2.1.0
+Rationale: MINOR version - Added dual-mode principle and vim-style interaction guidance
+
+Modified Principles:
+- Expanded: II. TUI-Native Design → now includes dual-mode architecture
+- Added: III. Dual-Mode Architecture (TUI + CLI)
+
+Added Sections:
+- Mode interaction details (TUI for interactive, CLI for automation)
+- Vim-style keyboard navigation guidance
+
+Template Updates:
+- ⚠️ .specify/templates/* - Should consider both modes in planning
+- ⚠️ .claude/commands/* - May need adjustment for dual-mode development
+
+Date: 2025-11-04
+-->
+
+# OnTop Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Simplicity First
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+Keep the codebase simple and maintainable. Prefer straightforward solutions over clever ones.
+Avoid premature optimization and unnecessary abstractions. If a feature adds complexity without
+clear value for personal use, skip it.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+**Rationale**: Personal projects should be maintainable by one person. Simple code is easier to
+understand, debug, and extend when returning to the project after time away.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### II. Vim-Style Interaction
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+Embrace vim-style keyboard-driven workflows. Use familiar keybindings (j/k for navigation, etc.)
+and modal interaction patterns. The TUI should feel natural to vim users with intuitive, efficient
+keyboard shortcuts.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+**Rationale**: Vim users expect certain interaction patterns. Leveraging muscle memory from vim
+reduces cognitive load and makes the tool feel like a natural extension of the development
+environment.
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+### III. Dual-Mode Architecture
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+The application MUST support two distinct modes of operation:
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+1. **TUI Mode** (Interactive): Full-screen terminal interface for browsing, viewing, and managing
+   tasks interactively. Vim-style navigation and keybindings. Visual feedback and real-time
+   updates.
+
+2. **CLI Mode** (Unattended): Command-line interface for scripted/automated task management.
+   Text-based input/output suitable for pipes, scripts, and automation. No interactive prompts.
+
+Both modes operate on the same underlying data store and MUST maintain consistency.
+
+**Rationale**: Interactive work requires rich visual feedback (TUI), while automation and scripting
+require simple, scriptable commands (CLI). Supporting both modes makes the tool useful in different
+contexts without forcing awkward compromises.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+### Amendment Procedure
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+This constitution can be amended at any time to reflect the evolving needs of the project. Update
+the version number and date when making changes:
+- **MAJOR**: Fundamental principle changes
+- **MINOR**: New principles added
+- **PATCH**: Clarifications or wording improvements
+
+**Version**: 2.1.0 | **Ratified**: 2025-11-04 | **Last Amended**: 2025-11-04

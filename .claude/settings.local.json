@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.specify/scripts/bash/create-new-feature.sh:*)",
+      "Bash(.specify/scripts/bash/check-prerequisites.sh:*)",
+      "Bash(if [ -d \"/Users/lucasefe/Code/mine/todoer/specs/001-todoer/checklists\" ])",
+      "Bash(then find \"/Users/lucasefe/Code/mine/todoer/specs/001-todoer/checklists\" -name \"*.md\" -type f)",
+      "Bash(else echo \"NO_CHECKLISTS\")",
+      "Bash(fi)",
+      "Bash(git rev-parse:*)",
+      "Bash(go mod init:*)",
+      "Bash(go get:*)",
+      "Bash(go clean:*)",
+      "Bash(GOPROXY=direct go get:*)",
+      "Bash(go build:*)",
+      "Bash(./bin/todoer help:*)",
+      "Bash(./bin/todoer add:*)",
+      "Bash(./bin/todoer list:*)",
+      "Bash(./bin/todoer show:*)",
+      "Bash(make install:*)",
+      "Bash(./bin/todoer move:*)",
+      "Bash(./bin/todoer update:*)",
+      "Bash(make build:*)",
+      "Bash(./ontop help:*)",
+      "Bash(./ontop list:*)",
+      "Bash(./ontop move:*)",
+      "Bash(./ontop update:*)",
+      "Bash(./ontop show:*)",
+      "Bash(find:*)",
+      "Bash(./ontop add:*)",
+      "Bash(./ontop:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
