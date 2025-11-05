@@ -35,7 +35,7 @@ func NewDB(path string) (*sql.DB, error) {
 
 	// Enable WAL mode for better concurrency
 	if _, err := db.Exec("PRAGMA journal_mode=WAL"); err != nil {
-		db.Close()
+		_ = db.Close() // Ignore close error since we're already handling an error
 		return nil, fmt.Errorf("failed to enable WAL mode: %w", err)
 	}
 
@@ -135,7 +135,9 @@ func ListTasks(db *sql.DB, filters map[string]interface{}) ([]*models.Task, erro
 	if err != nil {
 		return nil, fmt.Errorf("failed to query tasks: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		_ = rows.Close() // Best effort close
+	}()
 
 	var tasks []*models.Task
 	for rows.Next() {

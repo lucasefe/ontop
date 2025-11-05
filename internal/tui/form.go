@@ -21,10 +21,6 @@ var (
 			Padding(1, 2).
 			MarginTop(1)
 
-	formTitleStyle = lipgloss.NewStyle().
-			Bold(true).
-			Foreground(gruvboxGreen)
-
 	formLabelStyle = lipgloss.NewStyle().
 			Foreground(gruvboxGray).
 			Bold(true)

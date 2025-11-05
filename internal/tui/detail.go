@@ -8,11 +8,6 @@ import (
 )
 
 var (
-	detailTitleStyle = lipgloss.NewStyle().
-				Bold(true).
-				Foreground(gruvboxGreen).
-				MarginBottom(1)
-
 	detailLabelStyle = lipgloss.NewStyle().
 				Bold(true).
 				Foreground(gruvboxGray)

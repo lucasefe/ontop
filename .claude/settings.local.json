@@ -29,7 +29,10 @@
       "Bash(find:*)",
       "Bash(./ontop add:*)",
       "Bash(./ontop:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(sed:*)",
+      "Bash(make lint:*)",
+      "Bash(brew install:*)"
     ],
     "deny": [],
     "ask": []

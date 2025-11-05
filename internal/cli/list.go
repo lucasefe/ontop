@@ -118,19 +118,6 @@ EXAMPLES:
 	os.Exit(0)
 }
 
-func formatColumnHeader(column string) string {
-	switch column {
-	case "inbox":
-		return "INBOX"
-	case "in_progress":
-		return "IN PROGRESS"
-	case "done":
-		return "DONE"
-	default:
-		return strings.ToUpper(column)
-	}
-}
-
 func formatColumnDisplay(column string) string {
 	switch column {
 	case "inbox":

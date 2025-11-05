@@ -35,29 +35,29 @@ const (
 
 // Model represents the Bubbletea application state
 type Model struct {
-	db              *sql.DB
-	tasks           []*models.Task
-	currentColumn   int // 0=inbox, 1=in_progress, 2=done
-	selectedTask    int // Index within current column
-	viewMode        ViewMode
-	sortMode        SortMode // How tasks are sorted in columns
-	showArchived    bool     // Show archived tasks instead of active
-	detailTask      *models.Task
-	detailSubtasks  []*models.Task
-	moveTask        *models.Task
-	moveSelection   int // Which column to move to
-	deleteTask      *models.Task // Task pending deletion
+	db             *sql.DB
+	tasks          []*models.Task
+	currentColumn  int // 0=inbox, 1=in_progress, 2=done
+	selectedTask   int // Index within current column
+	viewMode       ViewMode
+	sortMode       SortMode // How tasks are sorted in columns
+	showArchived   bool     // Show archived tasks instead of active
+	detailTask     *models.Task
+	detailSubtasks []*models.Task
+	moveTask       *models.Task
+	moveSelection  int          // Which column to move to
+	deleteTask     *models.Task // Task pending deletion
 	// Form fields
-	formInputs      []textinput.Model
-	formFocusIndex  int
-	formTask        *models.Task // Task being created/edited
-	formErr         error        // Form validation error (doesn't quit app)
+	formInputs     []textinput.Model
+	formFocusIndex int
+	formTask       *models.Task // Task being created/edited
+	formErr        error        // Form validation error (doesn't quit app)
 	// UI components
-	keys            KeyMap
-	help            help.Model
-	width           int
-	height          int
-	err             error
+	keys   KeyMap
+	help   help.Model
+	width  int
+	height int
+	err    error
 }
 
 // NewModel creates a new TUI model
