@@ -74,9 +74,9 @@ func (m Model) renderDeleteConfirm() string {
 	b.WriteString(confirmPromptStyle.Render(prompt.String()))
 	b.WriteString("\n")
 
-	// Help text
-	help := "h/l: select • enter: confirm • esc: cancel • q: quit"
-	b.WriteString(helpStyle.Render(help))
+	// Help view
+	helpView := m.help.View(m.keys)
+	b.WriteString(helpStyle.Render(helpView))
 
 	return b.String()
 }

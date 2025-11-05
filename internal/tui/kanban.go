@@ -84,7 +84,21 @@ func (m Model) renderKanban() string {
 		Bold(true).
 		Foreground(gruvboxGreen).
 		Render("OnTop - Task Manager")
-	b.WriteString(title + "\n\n")
+	b.WriteString(title + "\n")
+
+	// Status bar with sort info and archive indicator
+	viewMode := "Active"
+	if m.showArchived {
+		viewMode = "Archived"
+	}
+	statusMsg := fmt.Sprintf("Total tasks: %d  •  Sort: %s  •  View: %s", len(m.tasks), m.GetSortModeName(), viewMode)
+	b.WriteString(statusBarStyle.Render(statusMsg))
+	b.WriteString("\n")
+
+	// Help view
+	helpView := m.help.View(m.keys)
+	b.WriteString(helpStyle.Render(helpView))
+	b.WriteString("\n\n")
 
 	// Get tasks by column
 	inboxTasks := m.GetTasksByColumn(models.ColumnInbox)
@@ -104,22 +118,6 @@ func (m Model) renderKanban() string {
 	)
 
 	b.WriteString(columns)
-	b.WriteString("\n\n")
-
-	// Status bar with sort info and archive indicator
-	viewMode := "Active"
-	archiveAction := "archive"
-	if m.showArchived {
-		viewMode = "Archived"
-		archiveAction = "unarchive"
-	}
-	statusMsg := fmt.Sprintf("Total tasks: %d  •  Sort: %s  •  View: %s", len(m.tasks), m.GetSortModeName(), viewMode)
-	b.WriteString(statusBarStyle.Render(statusMsg))
-	b.WriteString("\n")
-
-	// Help text
-	help := fmt.Sprintf("j/k: up/down • h/l: prev/next • s: sort • z: toggle archive • enter: details • n: new • m: move • a: %s • d: delete • r: refresh • q: quit", archiveAction)
-	b.WriteString(helpStyle.Render(help))
 
 	return b.String()
 }
@@ -208,24 +206,27 @@ func (m Model) renderTaskCard(task *models.Task, maxWidth int) string {
 	createdStr := task.CreatedAt.Format("01/02")
 	timeStyle := lipgloss.NewStyle().Foreground(gruvboxGray)
 
-	// Calculate space for description
-	// Format: "P1 description... 01/02"
+	// Calculate space for title
+	// Format: "P1 title... 01/02"
 	reservedSpace := 3 + 1 + 5 + 1 // "P1 " + " " + "01/02"
-	descMaxLen := maxWidth - reservedSpace
-	if descMaxLen < 10 {
-		descMaxLen = 10
+	titleMaxLen := maxWidth - reservedSpace
+	if titleMaxLen < 10 {
+		titleMaxLen = 10
 	}
 
-	// Description (truncated if needed)
-	desc := task.Description
-	if len(desc) > descMaxLen {
-		desc = desc[:descMaxLen-3] + "..."
+	// Title (truncated if needed)
+	title := task.Title
+	if title == "" {
+		title = task.Description // Fallback for migration
+	}
+	if len(title) > titleMaxLen {
+		title = title[:titleMaxLen-3] + "..."
 	}
 
-	// Build single line: "P1 description... 01/02"
+	// Build single line: "P1 title... 01/02"
 	return fmt.Sprintf("%s %s %s",
 		priorityStr,
-		desc,
+		title,
 		timeStyle.Render(createdStr),
 	)
 }

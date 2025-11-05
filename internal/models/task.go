@@ -5,7 +5,8 @@ import "time"
 // Task represents a work item with all attributes
 type Task struct {
 	ID          string     `json:"id"`
-	Description string     `json:"description"`
+	Title       string     `json:"title"`       // Short title shown in kanban
+	Description string     `json:"description"` // Full text description
 	Priority    int        `json:"priority"`    // 1-5 where 1 is highest
 	Column      string     `json:"column"`      // inbox, in_progress, done
 	Progress    int        `json:"progress"`    // 0-100

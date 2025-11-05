@@ -82,9 +82,9 @@ func (m Model) renderMovePrompt() string {
 	b.WriteString(movePromptStyle.Render(prompt.String()))
 	b.WriteString("\n")
 
-	// Help text
-	help := "h/l: select column • enter: confirm • esc: cancel • q: quit"
-	b.WriteString(helpStyle.Render(help))
+	// Help view
+	helpView := m.help.View(m.keys)
+	b.WriteString(helpStyle.Render(helpView))
 
 	return b.String()
 }

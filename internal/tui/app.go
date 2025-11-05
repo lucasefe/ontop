@@ -37,6 +37,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
+		m.help.Width = msg.Width
 		return m, nil
 
 	case tasksLoadedMsg:
@@ -56,7 +57,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // handleKeyPress processes keyboard input
 func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	keys := DefaultKeyMap()
+	keys := m.keys
+
+	// Toggle help
+	if key.Matches(msg, keys.Help) {
+		m.help.ShowAll = !m.help.ShowAll
+		return m, nil
+	}
 
 	// Quit
 	if key.Matches(msg, keys.Quit) {

@@ -37,39 +37,48 @@ var (
 // initCreateForm initializes the form for creating a new task
 func (m *Model) initCreateForm() {
 	// Calculate input width based on terminal width
-	inputWidth := m.width - 10 // Leave space for borders and padding
+	inputWidth := m.width - 20 // Leave space for borders and padding
 	if inputWidth < 40 {
 		inputWidth = 40
 	}
-	if inputWidth > 100 {
-		inputWidth = 100
-	}
 
-	// Create text inputs (4 fields now: description, priority, tags, parent)
-	m.formInputs = make([]textinput.Model, 4)
+	// Create text inputs (6 fields: title, description, priority, progress, tags, parent)
+	m.formInputs = make([]textinput.Model, 6)
 
-	// Description
+	// Title (short)
 	m.formInputs[0] = textinput.New()
-	m.formInputs[0].Placeholder = "Task description"
+	m.formInputs[0].Placeholder = "Task title"
 	m.formInputs[0].Focus()
 	m.formInputs[0].Width = inputWidth
 
-	// Priority
+	// Description (full text)
 	m.formInputs[1] = textinput.New()
-	m.formInputs[1].Placeholder = "1-5 (default: 3)"
-	m.formInputs[1].SetValue("3")
-	m.formInputs[1].CharLimit = 1
-	m.formInputs[1].Width = 20
+	m.formInputs[1].Placeholder = "Full description (optional)"
+	m.formInputs[1].Width = inputWidth
+
+	// Priority
+	m.formInputs[2] = textinput.New()
+	m.formInputs[2].Placeholder = "1-5 (default: 3)"
+	m.formInputs[2].SetValue("3")
+	m.formInputs[2].CharLimit = 1
+	m.formInputs[2].Width = 20
+
+	// Progress
+	m.formInputs[3] = textinput.New()
+	m.formInputs[3].Placeholder = "0-100 (default: 0)"
+	m.formInputs[3].SetValue("0")
+	m.formInputs[3].CharLimit = 3
+	m.formInputs[3].Width = 20
 
 	// Tags
-	m.formInputs[2] = textinput.New()
-	m.formInputs[2].Placeholder = "tag1,tag2,tag3"
-	m.formInputs[2].Width = inputWidth
+	m.formInputs[4] = textinput.New()
+	m.formInputs[4].Placeholder = "tag1,tag2,tag3"
+	m.formInputs[4].Width = inputWidth
 
 	// Parent task ID
-	m.formInputs[3] = textinput.New()
-	m.formInputs[3].Placeholder = "Parent task ID (optional)"
-	m.formInputs[3].Width = inputWidth
+	m.formInputs[5] = textinput.New()
+	m.formInputs[5].Placeholder = "Parent task ID (optional)"
+	m.formInputs[5].Width = inputWidth
 
 	m.formFocusIndex = 0
 	m.formTask = nil
@@ -78,44 +87,54 @@ func (m *Model) initCreateForm() {
 // initEditForm initializes the form for editing an existing task
 func (m *Model) initEditForm(task *models.Task) {
 	// Calculate input width based on terminal width
-	inputWidth := m.width - 10 // Leave space for borders and padding
+	inputWidth := m.width - 20 // Leave space for borders and padding
 	if inputWidth < 40 {
 		inputWidth = 40
 	}
-	if inputWidth > 100 {
-		inputWidth = 100
-	}
 
-	// Create text inputs (4 fields now)
-	m.formInputs = make([]textinput.Model, 4)
+	// Create text inputs (6 fields: title, description, priority, progress, tags, parent)
+	m.formInputs = make([]textinput.Model, 6)
 
-	// Description
+	// Title
 	m.formInputs[0] = textinput.New()
-	m.formInputs[0].Placeholder = "Task description"
-	m.formInputs[0].SetValue(task.Description)
+	m.formInputs[0].Placeholder = "Task title"
+	m.formInputs[0].SetValue(task.Title)
 	m.formInputs[0].Focus()
 	m.formInputs[0].Width = inputWidth
 
-	// Priority
+	// Description
 	m.formInputs[1] = textinput.New()
-	m.formInputs[1].Placeholder = "1-5 (1=highest)"
-	m.formInputs[1].SetValue(strconv.Itoa(task.Priority))
-	m.formInputs[1].CharLimit = 1
-	m.formInputs[1].Width = 20
+	m.formInputs[1].Placeholder = "Full description (optional)"
+	m.formInputs[1].SetValue(task.Description)
+	m.formInputs[1].Width = inputWidth
+
+	// Priority
+	m.formInputs[2] = textinput.New()
+	m.formInputs[2].Placeholder = "1-5 (1=highest)"
+	m.formInputs[2].SetValue(strconv.Itoa(task.Priority))
+	m.formInputs[2].CharLimit = 1
+	m.formInputs[2].Width = 20
+
+	// Progress
+	m.formInputs[3] = textinput.New()
+	m.formInputs[3].Placeholder = "0-100"
+	m.formInputs[3].SetValue(strconv.Itoa(task.Progress))
+	m.formInputs[3].CharLimit = 3
+	m.formInputs[3].Width = 20
 
 	// Tags
-	m.formInputs[2] = textinput.New()
-	m.formInputs[2].Placeholder = "tag1,tag2,tag3"
-	m.formInputs[2].SetValue(strings.Join(task.Tags, ","))
-	m.formInputs[2].Width = inputWidth
+	m.formInputs[4] = textinput.New()
+	m.formInputs[4].Placeholder = "tag1,tag2,tag3"
+	m.formInputs[4].SetValue(strings.Join(task.Tags, ","))
+	m.formInputs[4].Width = inputWidth
 
 	// Parent task ID
-	m.formInputs[3] = textinput.New()
-	m.formInputs[3].Placeholder = "Parent task ID (clear to remove parent)"
+	m.formInputs[5] = textinput.New()
+	m.formInputs[5].Placeholder = "Parent task ID (clear to remove parent)"
 	if task.ParentID != nil {
-		m.formInputs[3].SetValue(*task.ParentID)
+		m.formInputs[5].SetValue(*task.ParentID)
 	}
-	m.formInputs[3].Width = inputWidth
+	m.formInputs[5].Width = inputWidth
 
 	m.formFocusIndex = 0
 	m.formTask = task
@@ -146,21 +165,29 @@ func (m Model) renderForm() string {
 	// Form content
 	var formContent strings.Builder
 
-	// Description field
-	formContent.WriteString(formLabelStyle.Render("Description:") + "\n")
+	// Title field
+	formContent.WriteString(formLabelStyle.Render("Title:") + "\n")
 	formContent.WriteString(m.formInputs[0].View() + "\n\n")
+
+	// Description field
+	formContent.WriteString(formLabelStyle.Render("Description (full text):") + "\n")
+	formContent.WriteString(m.formInputs[1].View() + "\n\n")
 
 	// Priority field
 	formContent.WriteString(formLabelStyle.Render("Priority (1-5, 1=highest):") + "\n")
-	formContent.WriteString(m.formInputs[1].View() + "\n\n")
+	formContent.WriteString(m.formInputs[2].View() + "\n\n")
+
+	// Progress field
+	formContent.WriteString(formLabelStyle.Render("Progress (0-100):") + "\n")
+	formContent.WriteString(m.formInputs[3].View() + "\n\n")
 
 	// Tags field
 	formContent.WriteString(formLabelStyle.Render("Tags (comma-separated):") + "\n")
-	formContent.WriteString(m.formInputs[2].View() + "\n\n")
+	formContent.WriteString(m.formInputs[4].View() + "\n\n")
 
 	// Parent task ID field
 	formContent.WriteString(formLabelStyle.Render("Parent Task ID (for subtasks):") + "\n")
-	formContent.WriteString(m.formInputs[3].View() + "\n")
+	formContent.WriteString(m.formInputs[5].View() + "\n")
 	if m.viewMode == ViewModeEdit && m.formTask != nil && m.formTask.ParentID != nil {
 		formContent.WriteString(formHelpStyle.Render("  (clear to remove parent relationship)") + "\n")
 	}
@@ -189,10 +216,9 @@ func (m Model) renderForm() string {
 		}
 	}
 
-	// Help text
-	help := "tab: next field • enter: save • esc: cancel • q: quit"
-	helpStyleCentered := helpStyle.Width(contentWidth).Align(lipgloss.Center)
-	b.WriteString(helpStyleCentered.Render(help))
+	// Help view
+	helpView := m.help.View(m.keys)
+	b.WriteString(helpStyle.Render(helpView))
 
 	return b.String()
 }

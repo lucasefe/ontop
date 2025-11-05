@@ -51,13 +51,14 @@ func CreateTask(db *sql.DB, task *models.Task) error {
 
 	query := `
 		INSERT INTO tasks (
-			id, description, priority, column, progress, parent_id,
+			id, title, description, priority, column, progress, parent_id,
 			archived, tags, created_at, updated_at, completed_at, deleted_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
 
 	_, err = db.Exec(query,
 		task.ID,
+		task.Title,
 		task.Description,
 		task.Priority,
 		task.Column,
@@ -81,7 +82,7 @@ func CreateTask(db *sql.DB, task *models.Task) error {
 // GetTask retrieves a single task by ID
 func GetTask(db *sql.DB, id string) (*models.Task, error) {
 	query := `
-		SELECT id, description, priority, column, progress, parent_id,
+		SELECT id, title, description, priority, column, progress, parent_id,
 		       archived, tags, created_at, updated_at, completed_at, deleted_at
 		FROM tasks
 		WHERE id = ? AND deleted_at IS NULL
@@ -94,7 +95,7 @@ func GetTask(db *sql.DB, id string) (*models.Task, error) {
 // ListTasks retrieves tasks with optional filters
 func ListTasks(db *sql.DB, filters map[string]interface{}) ([]*models.Task, error) {
 	query := `
-		SELECT id, description, priority, column, progress, parent_id,
+		SELECT id, title, description, priority, column, progress, parent_id,
 		       archived, tags, created_at, updated_at, completed_at, deleted_at
 		FROM tasks
 		WHERE deleted_at IS NULL
@@ -157,13 +158,14 @@ func UpdateTask(db *sql.DB, task *models.Task) error {
 
 	query := `
 		UPDATE tasks
-		SET description = ?, priority = ?, column = ?, progress = ?,
+		SET title = ?, description = ?, priority = ?, column = ?, progress = ?,
 		    parent_id = ?, archived = ?, tags = ?, updated_at = ?,
 		    completed_at = ?
 		WHERE id = ?
 	`
 
 	_, err = db.Exec(query,
+		task.Title,
 		task.Description,
 		task.Priority,
 		task.Column,
@@ -207,6 +209,7 @@ func scanTask(s scanner) (*models.Task, error) {
 
 	err := s.Scan(
 		&task.ID,
+		&task.Title,
 		&task.Description,
 		&task.Priority,
 		&task.Column,

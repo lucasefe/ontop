@@ -51,10 +51,17 @@ func (m Model) renderDetail() string {
 	details.WriteString(detailValueStyle.Render(task.ID))
 	details.WriteString("\n")
 
-	// Description
-	details.WriteString(detailLabelStyle.Render("Description: "))
-	details.WriteString(detailValueStyle.Render(task.Description))
+	// Title
+	details.WriteString(detailLabelStyle.Render("Title: "))
+	details.WriteString(detailValueStyle.Render(task.Title))
 	details.WriteString("\n\n")
+
+	// Description
+	if task.Description != "" {
+		details.WriteString(detailLabelStyle.Render("Description: "))
+		details.WriteString(detailValueStyle.Render(task.Description))
+		details.WriteString("\n\n")
+	}
 
 	// Priority
 	priorityColor, ok := priorityColors[task.Priority]
@@ -167,13 +174,9 @@ func (m Model) renderDetail() string {
 		b.WriteString("\n")
 	}
 
-	// Help text with dynamic archive/unarchive
-	archiveAction := "archive"
-	if m.showArchived {
-		archiveAction = "unarchive"
-	}
-	help := fmt.Sprintf("e: edit • a: %s • d: delete • esc: back to kanban • q: quit", archiveAction)
-	b.WriteString(helpStyle.Render(help))
+	// Help view
+	helpView := m.help.View(m.keys)
+	b.WriteString(helpStyle.Render(helpView))
 
 	return b.String()
 }

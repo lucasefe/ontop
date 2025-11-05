@@ -10,7 +10,8 @@ func InitSchema(db *sql.DB) error {
 	schema := `
 	CREATE TABLE IF NOT EXISTS tasks (
 		id TEXT PRIMARY KEY,
-		description TEXT NOT NULL,
+		title TEXT NOT NULL DEFAULT '',
+		description TEXT NOT NULL DEFAULT '',
 		priority INTEGER NOT NULL CHECK (priority >= 1 AND priority <= 5),
 		column TEXT NOT NULL CHECK (column IN ('inbox', 'in_progress', 'done')),
 		progress INTEGER NOT NULL DEFAULT 0 CHECK (progress >= 0 AND progress <= 100),
@@ -35,6 +36,20 @@ func InitSchema(db *sql.DB) error {
 	_, err := db.Exec(schema)
 	if err != nil {
 		return fmt.Errorf("failed to initialize schema: %w", err)
+	}
+
+	// Add title column if it doesn't exist (migration for existing databases)
+	_, err = db.Exec(`
+		ALTER TABLE tasks ADD COLUMN title TEXT NOT NULL DEFAULT '';
+	`)
+	// Ignore error if column already exists
+
+	// Migrate existing data: copy description to title if title is empty
+	_, err = db.Exec(`
+		UPDATE tasks SET title = substr(description, 1, 100) WHERE title = '' OR title IS NULL;
+	`)
+	if err != nil {
+		return fmt.Errorf("failed to migrate titles: %w", err)
 	}
 
 	return nil

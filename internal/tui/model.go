@@ -5,7 +5,9 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/textinput"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/lucasefe/ontop/internal/models"
 )
 
@@ -49,6 +51,9 @@ type Model struct {
 	formInputs      []textinput.Model
 	formFocusIndex  int
 	formTask        *models.Task // Task being created/edited
+	// UI components
+	keys            KeyMap
+	help            help.Model
 	width           int
 	height          int
 	err             error
@@ -56,12 +61,25 @@ type Model struct {
 
 // NewModel creates a new TUI model
 func NewModel(db *sql.DB) Model {
+	h := help.New()
+	// Apply Gruvbox theme colors to help
+	gruvboxGreen := "#b8bb26"
+	gruvboxGray := "#928374"
+	h.Styles.ShortKey = h.Styles.ShortKey.Foreground(lipgloss.Color(gruvboxGreen))
+	h.Styles.ShortDesc = h.Styles.ShortDesc.Foreground(lipgloss.Color(gruvboxGray))
+	h.Styles.FullKey = h.Styles.FullKey.Foreground(lipgloss.Color(gruvboxGreen))
+	h.Styles.FullDesc = h.Styles.FullDesc.Foreground(lipgloss.Color(gruvboxGray))
+	h.Styles.ShortSeparator = h.Styles.ShortSeparator.Foreground(lipgloss.Color(gruvboxGray))
+	h.Styles.FullSeparator = h.Styles.FullSeparator.Foreground(lipgloss.Color(gruvboxGray))
+
 	return Model{
 		db:            db,
 		currentColumn: 0,
 		selectedTask:  0,
 		viewMode:      ViewModeKanban,
 		sortMode:      SortByPriority,
+		keys:          DefaultKeyMap(),
+		help:          h,
 		width:         80,
 		height:        24,
 	}
