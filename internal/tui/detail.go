@@ -31,12 +31,19 @@ func (m Model) renderDetail() string {
 	task := m.detailTask
 	var b strings.Builder
 
-	// Title
-	title := lipgloss.NewStyle().
+	// Calculate content width based on terminal
+	contentWidth := m.width - 8 // Leave space for borders
+	if contentWidth < 40 {
+		contentWidth = 40
+	}
+
+	// Title header
+	titleStyle := lipgloss.NewStyle().
 		Bold(true).
 		Foreground(gruvboxGreen).
-		Render("Task Details")
-	b.WriteString(title + "\n\n")
+		Width(contentWidth).
+		Align(lipgloss.Center)
+	b.WriteString(titleStyle.Render("Task Details") + "\n\n")
 
 	// Main task details section
 	var details strings.Builder
@@ -48,13 +55,19 @@ func (m Model) renderDetail() string {
 
 	// Title
 	details.WriteString(detailLabelStyle.Render("Title: "))
-	details.WriteString(detailValueStyle.Render(task.Title))
+	displayTitle := task.Title
+	if displayTitle == "" {
+		displayTitle = task.Description
+	}
+	details.WriteString(detailValueStyle.Render(displayTitle))
 	details.WriteString("\n\n")
 
-	// Description
-	if task.Description != "" {
+	// Description (if different from title)
+	if task.Description != "" && task.Description != displayTitle {
 		details.WriteString(detailLabelStyle.Render("Description: "))
-		details.WriteString(detailValueStyle.Render(task.Description))
+		// Wrap description text for better readability
+		wrappedDesc := lipgloss.NewStyle().Width(contentWidth - 16).Render(task.Description)
+		details.WriteString(detailValueStyle.Render(wrappedDesc))
 		details.WriteString("\n\n")
 	}
 
@@ -125,7 +138,9 @@ func (m Model) renderDetail() string {
 		details.WriteString("\n")
 	}
 
-	b.WriteString(detailSectionStyle.Render(details.String()))
+	// Apply dynamic width to section
+	detailSectionStyleDynamic := detailSectionStyle.Width(contentWidth)
+	b.WriteString(detailSectionStyleDynamic.Render(details.String()))
 	b.WriteString("\n")
 
 	// Subtasks section
@@ -139,7 +154,7 @@ func (m Model) renderDetail() string {
 		subtasks.WriteString("\n\n")
 
 		for _, st := range m.detailSubtasks {
-			// Priority and description
+			// Priority and title/description
 			priorityColor, ok := priorityColors[st.Priority]
 			if !ok {
 				priorityColor = gruvboxGray
@@ -151,7 +166,13 @@ func (m Model) renderDetail() string {
 			subtasks.WriteString("  • ")
 			subtasks.WriteString(priorityStyle.Render(fmt.Sprintf("P%d", st.Priority)))
 			subtasks.WriteString(" ")
-			subtasks.WriteString(st.Description)
+
+			// Display title if present, fallback to description
+			displayText := st.Title
+			if displayText == "" {
+				displayText = st.Description
+			}
+			subtasks.WriteString(displayText)
 
 			// Progress
 			if st.Progress > 0 {
@@ -165,7 +186,7 @@ func (m Model) renderDetail() string {
 			subtasks.WriteString("\n")
 		}
 
-		b.WriteString(detailSectionStyle.Render(subtasks.String()))
+		b.WriteString(detailSectionStyleDynamic.Render(subtasks.String()))
 		b.WriteString("\n")
 	}
 
