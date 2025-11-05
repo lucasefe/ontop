@@ -329,6 +329,7 @@ func (m Model) handleDetailKeys(msg tea.KeyMsg, keys KeyMap) (tea.Model, tea.Cmd
 		m.viewMode = ViewModeKanban
 		m.detailTask = nil
 		m.detailSubtasks = nil
+		m.statusMessage = "" // Clear status message
 		return m, nil
 	}
 
@@ -337,6 +338,7 @@ func (m Model) handleDetailKeys(msg tea.KeyMsg, keys KeyMap) (tea.Model, tea.Cmd
 		if m.detailTask != nil {
 			m.viewMode = ViewModeCreate
 			m.initCreateForm(&m.detailTask.ID) // Pass parent ID to pre-fill
+			m.statusMessage = ""                // Clear status message
 		}
 		return m, nil
 	}
@@ -346,6 +348,7 @@ func (m Model) handleDetailKeys(msg tea.KeyMsg, keys KeyMap) (tea.Model, tea.Cmd
 		if m.detailTask != nil {
 			m.viewMode = ViewModeEdit
 			m.initEditForm(m.detailTask)
+			m.statusMessage = "" // Clear status message
 		}
 		return m, nil
 	}
@@ -476,10 +479,41 @@ func (m Model) handleFormKeys(msg tea.KeyMsg, keys KeyMap) (tea.Model, tea.Cmd) 
 		return m.saveForm()
 	}
 
-	// Save with Enter - but NOT if we're in the textarea (focus index 1)
-	// In textarea, Enter should add newline, not save
-	if key.Matches(msg, keys.Select) && m.formFocusIndex != 1 {
-		return m.saveForm()
+	// Shift+Tab to previous field (total 6 fields: 0-5)
+	// 0: Title, 1: Description (textarea), 2: Priority, 3: Progress, 4: Tags, 5: Parent ID
+	if key.Matches(msg, keys.ShiftTab) {
+		// Blur current field
+		if m.formFocusIndex == 1 {
+			m.formTextarea.Blur()
+		} else {
+			// Map focus index to formInputs index
+			// Focus 0 -> formInputs[0]
+			// Focus 2+ -> formInputs[focus-1]
+			inputIdx := m.formFocusIndex
+			if inputIdx > 1 {
+				inputIdx--
+			}
+			if inputIdx >= 0 && inputIdx < len(m.formInputs) {
+				m.formInputs[inputIdx].Blur()
+			}
+		}
+
+		// Move to previous field (with wrap-around)
+		m.formFocusIndex = (m.formFocusIndex - 1 + 6) % 6
+
+		// Focus new field
+		if m.formFocusIndex == 1 {
+			m.formTextarea.Focus()
+		} else {
+			inputIdx := m.formFocusIndex
+			if inputIdx > 1 {
+				inputIdx--
+			}
+			if inputIdx >= 0 && inputIdx < len(m.formInputs) {
+				m.formInputs[inputIdx].Focus()
+			}
+		}
+		return m, nil
 	}
 
 	// Tab to next field (total 6 fields: 0-5)

@@ -68,11 +68,12 @@ type Model struct {
 	formTask       *models.Task // Task being created/edited
 	formErr        error        // Form validation error (doesn't quit app)
 	// UI components
-	keys   KeyMap
-	help   help.Model
-	width  int
-	height int
-	err    error
+	keys          KeyMap
+	help          help.Model
+	width         int
+	height        int
+	err           error
+	statusMessage string // Success/info message to display temporarily
 }
 
 // NewModel creates a new TUI model

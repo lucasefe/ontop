@@ -19,6 +19,7 @@ type KeyMap struct {
 	New           key.Binding
 	Edit          key.Binding
 	Tab           key.Binding
+	ShiftTab      key.Binding
 	Sort          key.Binding
 	ToggleArchive key.Binding
 	ToggleView    key.Binding
@@ -107,6 +108,10 @@ func DefaultKeyMap() KeyMap {
 		Tab: key.NewBinding(
 			key.WithKeys("tab"),
 			key.WithHelp("tab", "next field"),
+		),
+		ShiftTab: key.NewBinding(
+			key.WithKeys("shift+tab"),
+			key.WithHelp("shift+tab", "previous field"),
 		),
 		Sort: key.NewBinding(
 			key.WithKeys("s"),

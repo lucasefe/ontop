@@ -326,6 +326,7 @@ func (m Model) saveForm() (tea.Model, tea.Cmd) {
 	}
 
 	now := time.Now()
+	var savedTaskID string
 
 	if m.viewMode == ViewModeCreate {
 		// Create new task
@@ -349,6 +350,8 @@ func (m Model) saveForm() (tea.Model, tea.Cmd) {
 			m.err = err
 			return m, tea.Quit
 		}
+		savedTaskID = task.ID
+		m.statusMessage = "Task created successfully"
 	} else {
 		// Edit existing task
 		if m.formTask == nil {
@@ -368,10 +371,24 @@ func (m Model) saveForm() (tea.Model, tea.Cmd) {
 			m.err = err
 			return m, tea.Quit
 		}
+		savedTaskID = m.formTask.ID
+		m.statusMessage = "Task updated successfully"
 	}
 
-	// Return to kanban and reload
-	m.viewMode = ViewModeKanban
+	// Load the saved task for detail view
+	savedTask, err := storage.GetTask(m.db, savedTaskID)
+	if err != nil {
+		// Fallback to kanban if we can't load the task
+		m.viewMode = ViewModeKanban
+		m.formInputs = nil
+		m.formTask = nil
+		m.formErr = nil
+		return m, m.loadTasks
+	}
+
+	// Go to detail view of the saved task
+	m.detailTask = savedTask
+	m.viewMode = ViewModeDetail
 	m.formInputs = nil
 	m.formTask = nil
 	m.formErr = nil

@@ -45,6 +45,16 @@ func (m Model) renderDetail() string {
 		Align(lipgloss.Center)
 	b.WriteString(titleStyle.Render("Task Details") + "\n\n")
 
+	// Status message (if present)
+	if m.statusMessage != "" {
+		statusStyle := lipgloss.NewStyle().
+			Foreground(gruvboxGreen).
+			Bold(true).
+			Width(contentWidth).
+			Align(lipgloss.Center)
+		b.WriteString(statusStyle.Render("✓ "+m.statusMessage) + "\n\n")
+	}
+
 	// Main task details section
 	var details strings.Builder
 
