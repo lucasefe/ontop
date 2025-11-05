@@ -51,6 +51,7 @@ type Model struct {
 	formInputs      []textinput.Model
 	formFocusIndex  int
 	formTask        *models.Task // Task being created/edited
+	formErr         error        // Form validation error (doesn't quit app)
 	// UI components
 	keys            KeyMap
 	help            help.Model

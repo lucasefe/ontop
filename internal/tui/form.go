@@ -220,6 +220,16 @@ func (m Model) renderForm() string {
 	helpView := m.help.View(m.keys)
 	b.WriteString(helpStyle.Render(helpView))
 
+	// Show form error if present
+	if m.formErr != nil {
+		errorStyle := lipgloss.NewStyle().
+			Foreground(gruvboxRed).
+			Bold(true).
+			MarginTop(1)
+		b.WriteString("\n")
+		b.WriteString(errorStyle.Render("Error: " + m.formErr.Error()))
+	}
+
 	return b.String()
 }
 
@@ -236,15 +246,17 @@ func (m *Model) getSubtasksForTask(parentID string) []*models.Task {
 
 // saveForm validates and saves the form
 func (m Model) saveForm() (tea.Model, tea.Cmd) {
-	// Get values
-	description := strings.TrimSpace(m.formInputs[0].Value())
-	priorityStr := strings.TrimSpace(m.formInputs[1].Value())
-	tagsStr := strings.TrimSpace(m.formInputs[2].Value())
-	parentIDStr := strings.TrimSpace(m.formInputs[3].Value())
+	// Get values from 6 form inputs
+	title := strings.TrimSpace(m.formInputs[0].Value())
+	description := strings.TrimSpace(m.formInputs[1].Value())
+	priorityStr := strings.TrimSpace(m.formInputs[2].Value())
+	progressStr := strings.TrimSpace(m.formInputs[3].Value())
+	tagsStr := strings.TrimSpace(m.formInputs[4].Value())
+	parentIDStr := strings.TrimSpace(m.formInputs[5].Value())
 
-	// Validate description
-	if description == "" {
-		m.err = fmt.Errorf("description is required")
+	// Validate title
+	if title == "" {
+		m.formErr = fmt.Errorf("title is required")
 		return m, nil
 	}
 
@@ -253,10 +265,21 @@ func (m Model) saveForm() (tea.Model, tea.Cmd) {
 	if priorityStr != "" {
 		p, err := strconv.Atoi(priorityStr)
 		if err != nil || p < 1 || p > 5 {
-			m.err = fmt.Errorf("priority must be between 1 and 5")
+			m.formErr = fmt.Errorf("priority must be between 1 and 5")
 			return m, nil
 		}
 		priority = p
+	}
+
+	// Validate progress
+	progress := 0 // Default
+	if progressStr != "" {
+		p, err := strconv.Atoi(progressStr)
+		if err != nil || p < 0 || p > 100 {
+			m.formErr = fmt.Errorf("progress must be between 0 and 100")
+			return m, nil
+		}
+		progress = p
 	}
 
 	// Parse tags
@@ -279,7 +302,7 @@ func (m Model) saveForm() (tea.Model, tea.Cmd) {
 		// Validate parent exists
 		_, err := storage.GetTask(m.db, parentIDStr)
 		if err != nil {
-			m.err = fmt.Errorf("parent task not found: %s", parentIDStr)
+			m.formErr = fmt.Errorf("parent task not found: %s", parentIDStr)
 			return m, nil
 		}
 		parentID = &parentIDStr
@@ -291,10 +314,11 @@ func (m Model) saveForm() (tea.Model, tea.Cmd) {
 		// Create new task
 		task := &models.Task{
 			ID:          service.GenerateID(),
+			Title:       title,
 			Description: description,
 			Priority:    priority,
 			Column:      m.GetCurrentColumnName(), // Use current column
-			Progress:    0,
+			Progress:    progress,
 			ParentID:    parentID,
 			Archived:    false,
 			Tags:        tags,
@@ -315,8 +339,10 @@ func (m Model) saveForm() (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
+		m.formTask.Title = title
 		m.formTask.Description = description
 		m.formTask.Priority = priority
+		m.formTask.Progress = progress
 		m.formTask.Tags = tags
 		m.formTask.ParentID = parentID
 		m.formTask.UpdatedAt = now
@@ -331,5 +357,6 @@ func (m Model) saveForm() (tea.Model, tea.Cmd) {
 	m.viewMode = ViewModeKanban
 	m.formInputs = nil
 	m.formTask = nil
+	m.formErr = nil
 	return m, m.loadTasks
 }

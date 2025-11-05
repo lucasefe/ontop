@@ -17,6 +17,8 @@ import (
 // AddCommand implements the 'ontop add' command
 func AddCommand(db *sql.DB, args []string) {
 	fs := flag.NewFlagSet("add", flag.ExitOnError)
+	title := fs.String("title", "", "Task title (short, required)")
+	description := fs.String("description", "", "Full task description (optional)")
 	priority := fs.Int("priority", 3, "Task priority (1-5, where 1 is highest)")
 	tagsStr := fs.String("tags", "", "Comma-separated list of tags")
 	parentID := fs.String("parent", "", "Parent task ID for subtasks")
@@ -25,11 +27,13 @@ func AddCommand(db *sql.DB, args []string) {
 	jsonOutput := fs.Bool("json", false, "Output result as JSON")
 
 	fs.Usage = func() {
-		fmt.Fprintf(os.Stderr, `Usage: ontop add <description> [options]
+		fmt.Fprintf(os.Stderr, `Usage: ontop add [options]
 
-Create a new task with the specified description.
+Create a new task with the specified title and optional description.
 
 OPTIONS:
+    -title string      Task title (short, required)
+    -description string Full task description (optional)
     -priority int      Task priority (1-5, where 1 is highest) (default: 3)
     -tags string       Comma-separated list of tags
     -parent string     Parent task ID for subtasks
@@ -38,9 +42,9 @@ OPTIONS:
     -json              Output result as JSON
 
 EXAMPLES:
-    ontop add "Implement user authentication"
-    ontop add "Fix login bug" -priority 1 -tags "bug,urgent"
-    ontop add "Write tests" -parent 20251104-143000-00001
+    ontop add -title "Implement user authentication" -description "Add OAuth2 support with Google and GitHub"
+    ontop add -title "Fix login bug" -priority 1 -tags "bug,urgent"
+    ontop add -title "Write tests" -parent 01K98X44S6TZC6EREHC2RK0JGJ
 `)
 	}
 
@@ -48,14 +52,12 @@ EXAMPLES:
 		os.Exit(2)
 	}
 
-	// Get description from remaining args
-	if fs.NArg() < 1 {
-		fmt.Fprintf(os.Stderr, "Error: Task description is required\n")
+	// Validate title
+	if *title == "" {
+		fmt.Fprintf(os.Stderr, "Error: Task title is required\n")
 		fs.Usage()
 		os.Exit(2)
 	}
-
-	description := strings.Join(fs.Args(), " ")
 
 	// Validate inputs
 	if *priority < 1 || *priority > 5 {
@@ -99,7 +101,8 @@ EXAMPLES:
 	now := time.Now()
 	task := &models.Task{
 		ID:          service.GenerateID(),
-		Description: description,
+		Title:       *title,
+		Description: *description,
 		Priority:    *priority,
 		Column:      *column,
 		Progress:    *progress,

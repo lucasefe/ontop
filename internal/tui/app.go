@@ -348,6 +348,7 @@ func (m Model) handleFormKeys(msg tea.KeyMsg, keys KeyMap) (tea.Model, tea.Cmd) 
 		m.viewMode = ViewModeKanban
 		m.formInputs = nil
 		m.formTask = nil
+		m.formErr = nil
 		return m, nil
 	}
 
@@ -368,6 +369,9 @@ func (m Model) handleFormKeys(msg tea.KeyMsg, keys KeyMap) (tea.Model, tea.Cmd) 
 		}
 		return m, nil
 	}
+
+	// Clear form error when user types (so error disappears when they fix it)
+	m.formErr = nil
 
 	// Update the focused input
 	if m.formFocusIndex >= 0 && m.formFocusIndex < len(m.formInputs) {
