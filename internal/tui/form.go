@@ -82,9 +82,9 @@ func (m *Model) initCreateForm(parentID *string) {
 	m.formTextarea = textarea.New()
 	m.formTextarea.Placeholder = "Full description (optional, press Enter for new lines)"
 	m.formTextarea.SetWidth(inputWidth)
-	m.formTextarea.SetHeight(4)
+	m.formTextarea.SetHeight(8) // Increased from 4 to 8 lines
 	m.formTextarea.CharLimit = 2000
-	m.formTextarea.ShowLineNumbers = false
+	m.formTextarea.ShowLineNumbers = true // Show line numbers to indicate scroll position
 
 	m.formFocusIndex = 0
 	m.formTask = nil
@@ -141,9 +141,9 @@ func (m *Model) initEditForm(task *models.Task) {
 	m.formTextarea.Placeholder = "Full description (optional, press Enter for new lines)"
 	m.formTextarea.SetValue(task.Description)
 	m.formTextarea.SetWidth(inputWidth)
-	m.formTextarea.SetHeight(4)
+	m.formTextarea.SetHeight(8) // Increased from 4 to 8 lines
 	m.formTextarea.CharLimit = 2000
-	m.formTextarea.ShowLineNumbers = false
+	m.formTextarea.ShowLineNumbers = true // Show line numbers to indicate scroll position
 
 	m.formFocusIndex = 0
 	m.formTask = task
@@ -179,9 +179,9 @@ func (m Model) renderForm() string {
 	formContent.WriteString(m.formInputs[0].View() + "\n\n")
 
 	// Description field (textarea)
-	formContent.WriteString(formLabelStyle.Render("Description (press Enter for new lines):") + "\n")
+	formContent.WriteString(formLabelStyle.Render("Description (arrows to scroll, Enter for new line):") + "\n")
 	formContent.WriteString(m.formTextarea.View() + "\n")
-	formContent.WriteString(formHelpStyle.Render("  (Ctrl+S to save form from any field)") + "\n\n")
+	formContent.WriteString(formHelpStyle.Render("  (Use arrow keys to scroll if content exceeds 8 lines • Ctrl+S to save)") + "\n\n")
 
 	// Priority field
 	formContent.WriteString(formLabelStyle.Render("Priority (1-5, 1=highest):") + "\n")
