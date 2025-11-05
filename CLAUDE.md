@@ -214,6 +214,8 @@ Use `service.GenerateID()` for new tasks - don't create IDs manually. Format is 
 ## Active Technologies
 - Go 1.25.3+ (002-subtask-display-edit)
 - SQLite (local file: `~/.ontop/tasks.db`) with WAL mode (002-subtask-display-edit)
+- Go 1.25.3 (existing project) + Markdown (README format), PNG image format, shell scripting for sample data generation (003-readme-visual-enhancement)
+- Git repository (`docs/images/` for screenshots), filesystem for markdown files (003-readme-visual-enhancement)
 
 ## Recent Changes
 - 002-subtask-display-edit: Added Go 1.25.3+

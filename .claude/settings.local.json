@@ -36,7 +36,18 @@
       "Bash(if [ -d \"/Users/lucasefe/Code/mine/todoer/specs/002-subtask-display-edit/checklists\" ])",
       "Bash(then find \"/Users/lucasefe/Code/mine/todoer/specs/002-subtask-display-edit/checklists\" -name \"*.md\" -type f)",
       "Bash(go version:*)",
-      "Bash(go test:*)"
+      "Bash(go test:*)",
+      "Bash(.specify/scripts/bash/setup-plan.sh:*)",
+      "Bash(.specify/scripts/bash/update-agent-context.sh:*)",
+      "Bash(./scripts/generate-sample-data.sh:*)",
+      "Bash(sqlite3:*)",
+      "Bash(if [ -f ~/.ontop/tasks.db.backup-cli ])",
+      "Bash(then mv ~/.ontop/tasks.db.backup-cli ~/.ontop/tasks.db)",
+      "Bash(else echo \"No backup found\")",
+      "Bash(/tmp/cli-show-output.txt)",
+      "Bash(cat:*)",
+      "Bash(/tmp/cli-add-subtask-output.txt)",
+      "Bash(/tmp/cli-help-output.txt)"
     ],
     "deny": [],
     "ask": []
