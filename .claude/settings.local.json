@@ -47,7 +47,8 @@
       "Bash(/tmp/cli-show-output.txt)",
       "Bash(cat:*)",
       "Bash(/tmp/cli-add-subtask-output.txt)",
-      "Bash(/tmp/cli-help-output.txt)"
+      "Bash(/tmp/cli-help-output.txt)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []

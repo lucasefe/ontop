@@ -12,6 +12,8 @@
 
 A modern, flexible task management tool built in Go that works both as an interactive TUI (Terminal User Interface) and a traditional CLI.
 
+![OnTop TUI showing kanban board with three columns (Inbox, In Progress, Done) containing parent tasks and indented subtasks with hierarchical structure](docs/images/dash.png)
+
 ## Features
 
 - **Dual-Mode Interface**: Use as an interactive Kanban board TUI or run commands from the terminal
@@ -102,6 +104,20 @@ $ ./ontop add -title "Write unit tests for OAuth" -parent 01K992C1WG3BVF7BB8KT7H
 ```
 Created task 01K992DH9QE5VX7Z6FSCV63A36: Write unit tests for OAuth
 ```
+
+## Features Showcase
+
+### Task Detail View with Subtasks
+
+View comprehensive task details including all subtasks, metadata, and multiline descriptions:
+
+![OnTop TUI detail view showing a parent task with complete information including title, description, priority, progress, tags, timestamps, and list of all subtasks indented below](docs/images/detail.png)
+
+### Rich Task Editing
+
+Edit tasks with a comprehensive form featuring multiline description support with scrollable textarea:
+
+![OnTop TUI task edit form showing all input fields including title, multiline description textarea with line numbers, priority selector, progress bar, tags input, and parent task reference with keyboard shortcuts at bottom](docs/images/edit.png)
 
 ## Installation
 
