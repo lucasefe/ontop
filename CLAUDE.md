@@ -216,6 +216,8 @@ Use `service.GenerateID()` for new tasks - don't create IDs manually. Format is 
 - SQLite (local file: `~/.ontop/tasks.db`) with WAL mode (002-subtask-display-edit)
 - Go 1.25.3 (existing project) + Markdown (README format), PNG image format, shell scripting for sample data generation (003-readme-visual-enhancement)
 - Git repository (`docs/images/` for screenshots), filesystem for markdown files (003-readme-visual-enhancement)
+- Go 1.25.3 + Bubble Tea v1.2.4, Bubbles v0.20.0, Lip Gloss v1.0.0, modernc.org/sqlite v1.40.0 (004-row-ui)
+- SQLite database at `~/.ontop/tasks.db` + TOML config at `~/.config/ontop/ontop.toml` (004-row-ui)
 
 ## Recent Changes
 - 002-subtask-display-edit: Added Go 1.25.3+

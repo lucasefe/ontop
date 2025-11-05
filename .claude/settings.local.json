@@ -48,7 +48,11 @@
       "Bash(cat:*)",
       "Bash(/tmp/cli-add-subtask-output.txt)",
       "Bash(/tmp/cli-help-output.txt)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git fetch:*)",
+      "Bash(mkdir:*)",
+      "Bash(if [ -d \"/Users/lucasefe/Code/mine/ontop/specs/004-row-ui/checklists\" ])",
+      "Bash(then find \"/Users/lucasefe/Code/mine/ontop/specs/004-row-ui/checklists\" -name \"*.md\" -type f)"
     ],
     "deny": [],
     "ask": []
