@@ -81,21 +81,7 @@ func (m Model) renderKanban() string {
 		Bold(true).
 		Foreground(gruvboxGreen).
 		Render("OnTop - Task Manager")
-	b.WriteString(title + "\n")
-
-	// Status bar with sort info and archive indicator
-	viewMode := "Active"
-	if m.showArchived {
-		viewMode = "Archived"
-	}
-	statusMsg := fmt.Sprintf("Total tasks: %d  •  Sort: %s  •  View: %s", len(m.tasks), m.GetSortModeName(), viewMode)
-	b.WriteString(statusBarStyle.Render(statusMsg))
-	b.WriteString("\n")
-
-	// Help view
-	helpView := m.help.View(m.keys)
-	b.WriteString(helpStyle.Render(helpView))
-	b.WriteString("\n\n")
+	b.WriteString(title + "\n\n")
 
 	// Get tasks by column
 	inboxTasks := m.GetTasksByColumn(models.ColumnInbox)
@@ -115,6 +101,20 @@ func (m Model) renderKanban() string {
 	)
 
 	b.WriteString(columns)
+	b.WriteString("\n\n")
+
+	// Status bar with sort info and archive indicator
+	viewMode := "Active"
+	if m.showArchived {
+		viewMode = "Archived"
+	}
+	statusMsg := fmt.Sprintf("Total tasks: %d  •  Sort: %s  •  View: %s", len(m.tasks), m.GetSortModeName(), viewMode)
+	b.WriteString(statusBarStyle.Render(statusMsg))
+	b.WriteString("\n")
+
+	// Help view
+	helpView := m.help.View(m.keys)
+	b.WriteString(helpStyle.Render(helpView))
 
 	return b.String()
 }
